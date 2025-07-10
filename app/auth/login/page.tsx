@@ -16,7 +16,7 @@ import {
   Snackbar
 } from '@mui/material';
 import { Visibility, VisibilityOff, Login as LoginIcon } from '@mui/icons-material';
-import Footer from './ui/components/Footer';
+import Footer from '../../ui/components/Footer';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
