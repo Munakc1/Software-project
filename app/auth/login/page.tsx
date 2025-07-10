@@ -16,7 +16,6 @@ import {
   Snackbar
 } from '@mui/material';
 import { Visibility, VisibilityOff, Login as LoginIcon } from '@mui/icons-material';
-import Footer from '../../ui/components/Footer';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -305,7 +304,7 @@ export default function LoginPage() {
         </Paper>
       </div>
       
-      <Footer />
+      
 
       <Snackbar
         open={snackbar.open}

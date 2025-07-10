@@ -42,7 +42,6 @@ const MedicalNavbar = () => {
   };
 
   const handleLogout = () => {
-    // Add your logout logic here
     console.log('User logged out');
     router.push('/auth/login');
     handleMenuClose();
@@ -102,28 +101,28 @@ const MedicalNavbar = () => {
   ];
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="bg-white shadow-sm sticky top-0 z-50 w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex justify-between items-center h-16 w-full">
           {/* Left side - Logo and navigation */}
-          <div className="flex items-center space-x-12">
-            <Link href="/" className="flex items-center" style={{ marginLeft: '0' }}>
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center -mr-5 -ml-24">
               <Image 
                 src="/images/logo.png"
                 alt="Patient Care Portal"
-                width={220}  // Increased width
-                height={50}  // Increased height
-                className="h-12 w-auto"  // Increased size
+                width={180}
+                height={40}
+                className="h-10 w-auto"
               />
             </Link>
 
             {/* Middle - Navigation items (hidden on mobile) */}
-            <nav className="hidden md:flex space-x-8">  {/* Increased space between nav items */}
+            <nav className="hidden md:flex space-x-8">
               {navItems.map((item) => (
                 <Link 
                   key={item.name} 
                   href={item.path}
-                  className="text-gray-800 hover:text-indigo-600 text-sm font-semibold transition-colors duration-200"
+                  className="text-gray-700 hover:text-indigo-600 text-sm font-medium transition-colors duration-200"
                 >
                   {item.name}
                 </Link>
@@ -132,13 +131,14 @@ const MedicalNavbar = () => {
           </div>
 
           {/* Right side - Icons and buttons */}
-          <div className="flex items-center space-x-6" style={{ marginRight: '0' }}>  {/* Increased space between icons */}
+          <div className="flex items-center gap-6 ml-auto">
             {/* Login and Register buttons (visible when not logged in) */}
-            <div className="hidden md:flex items-center space-x-4">  {/* Increased space between buttons */}
+            <div className="hidden md:flex items-center gap-4 ml-auto">
               <Link href="/auth/login" passHref>
                 <Button 
                   variant="text" 
-                  className="text-gray-800 hover:text-indigo-600 font-semibold normal-case text-sm"
+                  className="text-gray-700 hover:text-indigo-600 font-medium normal-case text-sm px-3 py-1"
+                  size="small"
                 >
                   Login
                 </Button>
@@ -148,7 +148,7 @@ const MedicalNavbar = () => {
                 variant="outlined"
                 endIcon={<ArrowDropDown />}
                 onClick={handleRegisterOpen}
-                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold normal-case text-sm"
+                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-medium normal-case text-sm px-3 py-1"
                 size="small"
               >
                 Register
@@ -167,23 +167,23 @@ const MedicalNavbar = () => {
                 <MenuItem onClick={handleRegisterClose} component={Link} href="/auth/register">
                   <ListItemText primary="Register as Patient" className="text-gray-800" />
                 </MenuItem>
-                <MenuItem onClick={handleRegisterClose} component={Link} href="auth/doctor-register">
+                <MenuItem onClick={handleRegisterClose} component={Link} href="/auth/doctor-register">
                   <ListItemText primary="Register as Doctor" className="text-gray-800" />
                 </MenuItem>
               </Menu>
             </div>
 
             {/* Notification and Account icons */}
-            <div className="flex items-center space-x-2">  {/* Reduced space between icons */}
+            <div className="flex items-center gap-4">
               <IconButton 
                 aria-label="notifications" 
                 color="inherit" 
                 className="text-gray-600 hover:bg-gray-100"
                 onClick={handleNotificationOpen}
-                style={{ marginRight: '0' }}  // Removed right margin
+                size="medium"
               >
                 <Badge badgeContent={notifications.length} color="error">
-                  <Notifications />
+                  <Notifications fontSize="medium" />
                 </Badge>
               </IconButton>
               
@@ -195,15 +195,15 @@ const MedicalNavbar = () => {
                 onClick={handleMenuOpen}
                 color="inherit"
                 className="text-gray-600 hover:bg-gray-100"
-                style={{ marginRight: '0' }}  // Removed right margin
+                size="medium"
               >
-                <AccountCircle />
+                <AccountCircle fontSize="medium" />
               </IconButton>
             </div>
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden rounded-md p-2 text-gray-700 hover:bg-gray-100 focus:outline-none"
+              className="md:hidden rounded-md p-2 text-gray-600 hover:bg-gray-100 focus:outline-none"
               onClick={handleDrawerToggle}
               aria-label="Toggle menu"
             >
@@ -326,11 +326,11 @@ const MedicalNavbar = () => {
           <div className="w-64">
             <div className="flex items-center justify-between p-4 border-b">
               <Image 
-                src="/images/logo.jpg" 
+                src="/images/logo.png" 
                 alt="Patient Care Portal"
-                width={180}  // Increased width
-                height={40}  // Increased height
-                className="h-10 w-auto"  // Increased size
+                width={160}
+                height={35}
+                className="h-9 w-auto"
               />
               <button 
                 onClick={handleDrawerToggle} 
@@ -353,7 +353,7 @@ const MedicalNavbar = () => {
                     <ListItemText 
                       primary={item.name} 
                       primaryTypographyProps={{
-                        className: "text-gray-800 font-semibold"
+                        className: "text-gray-800 font-medium"
                       }}
                     />
                   </ListItem>
@@ -371,7 +371,7 @@ const MedicalNavbar = () => {
                     <ListItemText 
                       primary="Login" 
                       primaryTypographyProps={{
-                        className: "text-gray-800 font-semibold"
+                        className: "text-gray-800 font-medium"
                       }}
                     />
                   </ListItem>
@@ -386,13 +386,13 @@ const MedicalNavbar = () => {
                     <ListItemText
                       primary="Register as Patient"
                       primaryTypographyProps={{
-                        className: "text-gray-800 font-semibold"
+                        className: "text-gray-800 font-medium"
                       }}
                     />
                   </ListItem>
                 </Link>
 
-                <Link href="auth/doctor-register" passHref legacyBehavior>
+                <Link href="/auth/doctor-register" passHref legacyBehavior>
                   <ListItem
                     component="a"
                     onClick={handleDrawerToggle}
@@ -401,7 +401,7 @@ const MedicalNavbar = () => {
                     <ListItemText
                       primary="Register as Doctor"
                       primaryTypographyProps={{
-                        className: "text-gray-800 font-semibold"
+                        className: "text-gray-800 font-medium"
                       }}
                     />
                   </ListItem>
@@ -423,7 +423,7 @@ const MedicalNavbar = () => {
                       <ListItemText 
                         primary={item.name} 
                         primaryTypographyProps={{
-                          className: "text-gray-800 font-semibold"
+                          className: "text-gray-800 font-medium"
                         }}
                       />
                     </ListItem>
