@@ -22,7 +22,7 @@ import {
   Box
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import Footer from '../../ui/components/Footer';
+
 
 export default function PatientRegisterPage() {
   const [formData, setFormData] = useState({
@@ -377,8 +377,7 @@ export default function PatientRegisterPage() {
           </form>
         </Paper>
       </div>
-      
-      <Footer />
+    
 
       <Snackbar
         open={snackbar.open}

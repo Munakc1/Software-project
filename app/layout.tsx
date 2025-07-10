@@ -1,14 +1,16 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import MedicalNavbar from './ui/components/MedicalNavbar' // Adjust the import path as needed
+// app/layout.tsx
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import MedicalNavbar from './ui/components/MedicalNavbar';
+import Footer from './ui/components/Footer';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Patient Care Portal',
   description: 'Medical History System',
-}
+};
 
 export default function RootLayout({
   children,
@@ -17,19 +19,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-gray-50`}>
         <div className="min-h-screen flex flex-col">
-          {/* Navbar at the top */}
+          {/* Navbar at the top with shadow */}
           <MedicalNavbar />
           
-          {/* Main content area */}
-          <main className="flex-grow bg-gray-50">
-            {children}
+          {/* Main content area with proper spacing */}
+          <main className="flex-grow px-4 sm:px-6 lg:px-8 py-8 bg-white">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
           </main>
           
-          {/* Optional footer can go here */}
+          {/* Footer with seamless connection */}
+          <Footer />
         </div>
       </body>
     </html>
-  )
+  );
 }

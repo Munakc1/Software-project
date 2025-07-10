@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { countries } from 'countries-list';
-import Footer from '../../ui/components/Footer';
+
 
 export default function DoctorRegisterPage() {
   const [formData, setFormData] = useState({
@@ -481,7 +481,7 @@ export default function DoctorRegisterPage() {
         </Paper>
       </div>
       
-      <Footer />
+   
 
       <Snackbar
         open={snackbar.open}
