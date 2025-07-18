@@ -45,6 +45,7 @@ const MedicalNavbar = () => {
     console.log('User logged out');
     router.push('/auth/login');
     handleMenuClose();
+    handleDrawerToggle();
   };
 
   const navItems = [
@@ -101,12 +102,12 @@ const MedicalNavbar = () => {
   ];
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50 w-full">
+    <header className="bg-white shadow-sm sticky top-0 z-50 w-full border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex justify-between items-center h-16 w-full">
           {/* Left side - Logo and navigation */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center -mr-5 -ml-24">
+            <Link href="/" className="flex items-center">
               <Image 
                 src="/images/logo.png"
                 alt="Patient Care Portal"
@@ -117,28 +118,29 @@ const MedicalNavbar = () => {
             </Link>
 
             {/* Middle - Navigation items (hidden on mobile) */}
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden md:flex space-x-8 ml-10">
               {navItems.map((item) => (
                 <Link 
                   key={item.name} 
                   href={item.path}
-                  className="text-gray-700 hover:text-indigo-600 text-sm font-medium transition-colors duration-200"
+                  className="text-gray-700 hover:text-gray-900 text-sm font-medium transition-colors duration-200 relative group"
                 >
                   {item.name}
+                  <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-gray-900 transition-all duration-300 group-hover:w-full"></span>
                 </Link>
               ))}
             </nav>
           </div>
 
           {/* Right side - Icons and buttons */}
-          <div className="flex items-center gap-6 ml-auto">
+          <div className="flex items-center gap-4">
             {/* Login and Register buttons (visible when not logged in) */}
-            <div className="hidden md:flex items-center gap-4 ml-auto">
+            <div className="hidden md:flex items-center gap-4">
               <Link href="/auth/login" passHref>
                 <Button 
                   variant="text" 
-                  className="text-gray-700 hover:text-indigo-600 font-medium normal-case text-sm px-3 py-1"
-                  size="small"
+                  className="text-black hover:bg-gray-100 font-medium normal-case text-sm px-4 py-2 rounded-md"
+                  size="medium"
                 >
                   Login
                 </Button>
@@ -148,8 +150,8 @@ const MedicalNavbar = () => {
                 variant="outlined"
                 endIcon={<ArrowDropDown />}
                 onClick={handleRegisterOpen}
-                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-medium normal-case text-sm px-3 py-1"
-                size="small"
+                className="border-gray-300 text-black hover:bg-gray-50 font-medium normal-case text-sm px-4 py-2 rounded-md"
+                size="medium"
               >
                 Register
               </Button>
@@ -160,21 +162,33 @@ const MedicalNavbar = () => {
                 onClose={handleRegisterClose}
                 PaperProps={{
                   style: {
-                    width: '200px',
+                    width: '220px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                   },
                 }}
               >
-                <MenuItem onClick={handleRegisterClose} component={Link} href="/auth/register">
+                <MenuItem 
+                  onClick={handleRegisterClose} 
+                  component={Link} 
+                  href="/auth/register"
+                  className="hover:bg-gray-50"
+                >
                   <ListItemText primary="Register as Patient" className="text-gray-800" />
                 </MenuItem>
-                <MenuItem onClick={handleRegisterClose} component={Link} href="/auth/doctor-register">
+                <MenuItem 
+                  onClick={handleRegisterClose} 
+                  component={Link} 
+                  href="/auth/doctor-register"
+                  className="hover:bg-gray-50"
+                >
                   <ListItemText primary="Register as Doctor" className="text-gray-800" />
                 </MenuItem>
               </Menu>
             </div>
 
             {/* Notification and Account icons */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <IconButton 
                 aria-label="notifications" 
                 color="inherit" 
@@ -218,7 +232,7 @@ const MedicalNavbar = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
+                  d={mobileOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
                 />
               </svg>
             </button>
@@ -233,16 +247,20 @@ const MedicalNavbar = () => {
             onClose={handleNotificationClose}
             PaperProps={{
               style: {
-                width: '350px',
+                width: '380px',
                 padding: '0',
+                maxHeight: '80vh',
+                overflow: 'auto',
+                borderRadius: '12px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
               },
             }}
           >
             <div className="p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Recent Notifications</h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {notifications.map((notification) => (
-                  <div key={notification.id} className="flex items-start">
+                  <div key={notification.id} className="flex items-start p-2 hover:bg-gray-50 rounded-lg transition-colors">
                     {notification.icon}
                     <div className="ml-3">
                       <p className="text-sm font-medium text-gray-900">{notification.title}</p>
@@ -251,8 +269,8 @@ const MedicalNavbar = () => {
                   </div>
                 ))}
               </div>
-              <div className="mt-3">
-                <button className="w-full text-center text-sm font-medium text-indigo-600 hover:text-indigo-500">
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <button className="w-full text-center text-sm font-medium text-gray-700 hover:text-gray-900">
                   View all notifications
                 </button>
               </div>
@@ -270,8 +288,9 @@ const MedicalNavbar = () => {
               elevation: 0,
               sx: {
                 overflow: 'visible',
-                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                filter: 'drop-shadow(0px 2px 12px rgba(0,0,0,0.12))',
                 mt: 1.5,
+                borderRadius: '8px',
                 '& .MuiAvatar-root': {
                   width: 32,
                   height: 32,
@@ -295,36 +314,67 @@ const MedicalNavbar = () => {
             transformOrigin={{ horizontal: 'right', vertical: 'top' }}
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
           >
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-sm font-medium text-gray-900">Signed in as</p>
+              <p className="text-sm text-gray-500 truncate">user@example.com</p>
+            </div>
             {accountMenuItems.map((item) => (
               item.path ? (
-                <Link href={item.path} key={item.name} passHref legacyBehavior>
-                  <MenuItem onClick={handleMenuClose}>
-                    <ListItemIcon>{item.icon}</ListItemIcon>
-                    <ListItemText primary={item.name} primaryTypographyProps={{ fontWeight: 500 }} />
-                  </MenuItem>
-                </Link>
+                <MenuItem 
+                  key={item.name} 
+                  onClick={() => {
+                    handleMenuClose();
+                    router.push(item.path);
+                  }}
+                  className="py-2 px-4 hover:bg-gray-50"
+                >
+                  <ListItemIcon className="min-w-[40px] text-gray-600">{item.icon}</ListItemIcon>
+                  <ListItemText 
+                    primary={item.name} 
+                    primaryTypographyProps={{ 
+                      fontSize: '0.875rem',
+                      fontWeight: 500 
+                    }} 
+                  />
+                </MenuItem>
               ) : (
-                <MenuItem onClick={item.action} key={item.name}>
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                    <ListItemText primary={item.name} primaryTypographyProps={{ fontWeight: 500 }} />
-                  </MenuItem>
-                )
-              ))}
-            </Menu>
-          </div>
+                <MenuItem 
+                  onClick={item.action} 
+                  key={item.name}
+                  className="py-2 px-4 hover:bg-gray-50"
+                >
+                  <ListItemIcon className="min-w-[40px] text-gray-600">{item.icon}</ListItemIcon>
+                  <ListItemText 
+                    primary={item.name} 
+                    primaryTypographyProps={{ 
+                      fontSize: '0.875rem',
+                      fontWeight: 500 
+                    }} 
+                  />
+                </MenuItem>
+              )
+            ))}
+          </Menu>
         </div>
 
         {/* Mobile drawer */}
         <Drawer
+          variant="temporary"
           anchor="right"
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
             keepMounted: true,
           }}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: 300,
+              boxSizing: 'border-box',
+            },
+          }}
         >
-          <div className="w-64">
-            <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <Image 
                 src="/images/logo.png" 
                 alt="Patient Care Portal"
@@ -342,80 +392,100 @@ const MedicalNavbar = () => {
                 </svg>
               </button>
             </div>
-            <List>
-              {navItems.map((item) => (
-                <Link href={item.path} key={item.name} passHref legacyBehavior>
+            
+            <div className="flex-grow overflow-y-auto">
+              <List>
+                {navItems.map((item) => (
                   <ListItem 
-                    component="a"
-                    onClick={handleDrawerToggle}
-                    className="hover:bg-gray-100 px-4 py-3"
+                    key={item.name}
+                    component="button"
+                    onClick={() => {
+                      router.push(item.path);
+                      handleDrawerToggle();
+                    }}
+                    className="hover:bg-gray-50 px-4 py-3 transition-colors"
                   >
                     <ListItemText 
                       primary={item.name} 
                       primaryTypographyProps={{
-                        className: "text-gray-800 font-medium"
+                        className: "text-gray-800 font-medium text-sm"
                       }}
                     />
                   </ListItem>
-                </Link>
-              ))}
+                ))}
+              </List>
               
               {/* Mobile Login/Register section */}
-              <div className="border-t mt-2 px-4 py-3">
-                <Link href="/auth/login" passHref legacyBehavior>
+              <div className="border-t border-gray-200 px-4 py-3">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Account</h3>
+                <List>
                   <ListItem 
-                    component="a"
-                    onClick={handleDrawerToggle}
-                    className="hover:bg-gray-100 px-0 py-2"
+                    component="button"
+                    onClick={() => {
+                      router.push('/auth/login');
+                      handleDrawerToggle();
+                    }}
+                    className="hover:bg-gray-50 px-0 py-2 transition-colors"
                   >
                     <ListItemText 
                       primary="Login" 
                       primaryTypographyProps={{
-                        className: "text-gray-800 font-medium"
+                        className: "text-gray-800 font-medium text-sm"
                       }}
                     />
                   </ListItem>
-                </Link>
-                
-                <Link href="/auth/register" passHref legacyBehavior>
+                  
                   <ListItem
-                    component="a"
-                    onClick={handleDrawerToggle}
-                    className="hover:bg-gray-100 px-0 py-2"
+                    component="button"
+                    onClick={() => {
+                      router.push('/auth/register');
+                      handleDrawerToggle();
+                    }}
+                    className="hover:bg-gray-50 px-0 py-2 transition-colors"
                   >
                     <ListItemText
                       primary="Register as Patient"
                       primaryTypographyProps={{
-                        className: "text-gray-800 font-medium"
+                        className: "text-gray-800 font-medium text-sm"
                       }}
                     />
                   </ListItem>
-                </Link>
 
-                <Link href="/auth/doctor-register" passHref legacyBehavior>
                   <ListItem
-                    component="a"
-                    onClick={handleDrawerToggle}
-                    className="hover:bg-gray-100 px-0 py-2"
+                    component="button"
+                    onClick={() => {
+                      router.push('/auth/doctor-register');
+                      handleDrawerToggle();
+                    }}
+                    className="hover:bg-gray-50 px-0 py-2 transition-colors"
                   >
                     <ListItemText
                       primary="Register as Doctor"
                       primaryTypographyProps={{
-                        className: "text-gray-800 font-medium"
+                        className: "text-gray-800 font-medium text-sm"
                       }}
                     />
                   </ListItem>
-                </Link>
+                </List>
               </div>
               
               {/* Account menu items (visible when logged in) */}
-              <div className="border-t mt-2">
-                {accountMenuItems.map((item) => (
-                  <Link href={item.path || '#'} key={item.name} passHref legacyBehavior>
+              <div className="border-t border-gray-200 px-4 py-3">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">My Account</h3>
+                <List>
+                  {accountMenuItems.map((item) => (
                     <ListItem 
-                      component="a"
-                      onClick={item.action ? item.action : handleDrawerToggle}
-                      className="hover:bg-gray-100 px-4 py-3"
+                      key={item.name}
+                      component="button"
+                      onClick={() => {
+                        if (item.action) {
+                          item.action();
+                        } else if (item.path) {
+                          router.push(item.path);
+                        }
+                        handleDrawerToggle();
+                      }}
+                      className="hover:bg-gray-50 px-0 py-2 transition-colors"
                     >
                       <ListItemIcon className="min-w-0 mr-3 text-gray-600">
                         {item.icon}
@@ -423,18 +493,19 @@ const MedicalNavbar = () => {
                       <ListItemText 
                         primary={item.name} 
                         primaryTypographyProps={{
-                          className: "text-gray-800 font-medium"
+                          className: "text-gray-800 font-medium text-sm"
                         }}
                       />
                     </ListItem>
-                  </Link>
-                ))}
+                  ))}
+                </List>
               </div>
-            </List>
+            </div>
           </div>
         </Drawer>
-      </header>
-    );
-  };
+      </div>
+    </header>
+  );
+};
 
-  export default MedicalNavbar;
+export default MedicalNavbar;
