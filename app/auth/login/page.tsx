@@ -1,325 +1,425 @@
-"use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+'use client';
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
-  TextField, 
-  Button, 
-  Checkbox, 
-  Typography, 
-  Link, 
-  Paper,
+  Button,
+  TextField,
   FormControlLabel,
-  InputAdornment,
+  Checkbox,
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Tabs,
+  Tab,
+  Box,
+  Divider,
   IconButton,
-  Alert,
-  CircularProgress,
-  Snackbar
-} from '@mui/material';
-import { Visibility, VisibilityOff, Login as LoginIcon } from '@mui/icons-material';
+  InputAdornment,
+  Avatar,
+  CircularProgress
+  
+} from "@mui/material";
+import {
+  Stethoscope,
+  Eye,
+  EyeOff,
+  Phone,
+  Lock,
+  User,
+  UserCheck,
+  ArrowLeft
+} from "lucide-react";
+import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [useOTP, setUseOTP] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'info' as 'info' | 'success' | 'warning' | 'error'
+  const [tabValue, setTabValue] = useState<'patient' | 'doctor'>('patient');
+  const [formData, setFormData] = useState({
+    phone: "",
+    password: "",
+    rememberMe: false
   });
+
   const router = useRouter();
-
-  // Load saved credentials if "remember me" was checked
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('rememberedEmail');
-    if (savedEmail) {
-      setEmail(savedEmail);
-    }
-  }, []);
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      newErrors.email = 'Invalid email format';
-    }
-    if (!useOTP && !password) {
-      newErrors.password = 'Password is required';
-    } else if (!useOTP && password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    return newErrors;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formErrors = validate();
-    setErrors(formErrors);
-    
-    if (Object.keys(formErrors).length > 0) return;
-
     setIsLoading(true);
+    
+    // Simulate authentication
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Redirect based on user type
+    router.push(tabValue === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard');
+    
+    setIsLoading(false);
+  };
 
-    try {
-      if (useOTP) {
-        // Simulate OTP API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setSnackbar({
-          open: true,
-          message: `OTP sent to ${email}`,
-          severity: 'success'
-        });
-      } else {
-        // Simulate login API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Demo credentials check
-        if (email === 'user@example.com' && password === 'password') {
-          if (rememberMe) {
-            localStorage.setItem('rememberedEmail', email);
-          } else {
-            localStorage.removeItem('rememberedEmail');
+  // Enhanced medical-themed MUI theme
+  const muiTheme = createTheme({
+    palette: {
+      primary: {
+        main: "#2A7F62", // Medical green
+        light: "#E8F5E9",
+        dark: "#1B5E20"
+      },
+      secondary: {
+        main: "#3A5E6D", // Medical blue
+      },
+      error: {
+        main: "#D32F2F",
+      },
+      background: {
+        default: "#F8FAFC",
+        paper: "#FFFFFF",
+      },
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            padding: '12px 24px',
+            borderRadius: '12px',
+            boxShadow: 'none',
+            '&:hover': {
+              boxShadow: '0 4px 12px rgba(42, 127, 98, 0.2)'
+            }
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            borderRadius: '16px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.05)',
+            border: '1px solid rgba(0,0,0,0.03)',
+            overflow: 'visible'
           }
-          router.push('/dashboard');
-        } else {
-          setSnackbar({
-            open: true,
-            message: 'Invalid credentials. Use user@example.com / password for demo.',
-            severity: 'error'
-          });
+        }
+      },
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            marginBottom: '24px',
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '12px',
+              '& fieldset': {
+                borderColor: "#E2E8F0",
+                borderWidth: '2px'
+              },
+              '&:hover fieldset': {
+                borderColor: "#2A7F62",
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: "#2A7F62",
+                borderWidth: '2px'
+              },
+            },
+            '& .MuiInputLabel-root': {
+              color: '#64748B',
+              fontWeight: 500,
+              '&.Mui-focused': {
+                color: '#2A7F62',
+              },
+            },
+            '& .MuiOutlinedInput-input': {
+              padding: '16px 16px'
+            }
+          }
+        }
+      },
+      MuiTab: {
+        styleOverrides: {
+          root: {
+            '&.Mui-selected': {
+              color: "#2A7F62",
+              fontWeight: 600
+            }
+          }
         }
       }
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: 'An error occurred. Please try again.',
-        severity: 'error'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
+    },
+  });
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="flex-grow flex items-center justify-center p-4">
-        <Paper 
-          elevation={3} 
-          className="w-full max-w-md p-8 rounded-2xl shadow-xl"
-          sx={{
-            background: 'rgba(255, 255, 255, 0.95)',
-            border: '1px solid rgba(0, 0, 0, 0.05)',
-            backdropFilter: 'blur(10px)'
-          }}
-        >
-          <div className="flex flex-col items-center mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                <LoginIcon sx={{ color: 'white' }} />
-              </div>
-              <Typography 
-                variant="h4" 
-                className="font-bold text-gray-800 text-center"
+    <MuiThemeProvider theme={muiTheme}>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-green-50">
+        <div className="w-full max-w-md space-y-6">
+          {/* Back Button */}
+          <Button
+            startIcon={<ArrowLeft size={18} />}
+            onClick={() => router.push('/')}
+            sx={{
+              color: '#64748B',
+              fontWeight: 500,
+              alignSelf: 'flex-start',
+              '&:hover': {
+                backgroundColor: 'rgba(42, 127, 98, 0.05)'
+              }
+            }}
+          >
+            Back
+          </Button>
+
+          {/* Logo */}
+          
+            
+             {/* Logo and Title */}
+<div className="flex flex-col items-center">
+  <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+    <img 
+      src="/images/logo.png" 
+      alt="MediPortal Logo"
+      className="h-20 w-80 object-contain" 
+    />
+  </Link>
+
+  <Typography 
+    variant="h4" 
+    className="font-bold text-center mt-[-20px]" // ❗ Negative margin to pull up text
+    sx={{
+      background: 'linear-gradient(90deg, #2A7F62, #3A5E6D)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      fontWeight: 700,
+      letterSpacing: '-0.5px',
+    }}
+  >
+    Welcome to MediPal
+  </Typography>
+  <Typography variant="subtitle1" className="text-gray-500 text-center mt-1">
+              Your health, our priority
+            </Typography>
+
+</div>
+
+         
+         
+
+          {/* Login Card */}
+          <Card>
+            <CardContent className="p-6">
+              <Tabs
+                value={tabValue}
+                onChange={(_, newValue) => setTabValue(newValue)}
+                variant="fullWidth"
                 sx={{
-                  background: 'linear-gradient(90deg, #3b82f6, #6366f1)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  fontWeight: 700
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: "#2A7F62",
+                    height: 3
+                  },
+                  mb: 3
                 }}
               >
-                Medipal
-              </Typography>
-            </div>
-            <Typography 
-              variant="subtitle2" 
-              className="text-gray-500 text-center"
-            >
-              Access your medical records and appointments
-            </Typography>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
-            <div>
-              <Typography variant="body2" className="font-medium mb-1 text-gray-700">
-                Email Address
-              </Typography>
-              <TextField
-                fullWidth
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                error={!!errors.email}
-                helperText={errors.email}
-                InputProps={{
-                  sx: {
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(243, 244, 246, 0.5)'
+                <Tab 
+                  value="patient" 
+                  label={
+                    <div className="flex items-center space-x-2">
+                      <User className="h-5 w-5" />
+                      <span>Patient</span>
+                    </div>
                   }
-                }}
-                type="email"
-                autoComplete="email"
-              />
-            </div>
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '0.95rem',
+                    padding: '12px 16px',
+                    minHeight: '48px'
+                  }}
+                />
+                <Tab 
+                  value="doctor" 
+                  label={
+                    <div className="flex items-center space-x-2">
+                      <UserCheck className="h-5 w-5" />
+                      <span>Doctor</span>
+                    </div>
+                  }
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '0.95rem',
+                    padding: '12px 16px',
+                    minHeight: '48px'
+                  }}
+                />
+              </Tabs>
 
-            {/* Password - Only shown when not using OTP */}
-            {!useOTP && (
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <Typography variant="body2" className="font-medium text-gray-700">
-                    Password
-                  </Typography>
-                  <Link 
-                    href="#" 
-                    variant="body2" 
-                    color="primary"
-                    sx={{ fontSize: '0.75rem' }}
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+              <Box component="form" onSubmit={handleSubmit} className="space-y-4">
                 <TextField
                   fullWidth
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  error={!!errors.password}
-                  helperText={errors.password}
+                  label="Phone Number"
+                  type="tel"
+                  placeholder="98XXXXXXXX"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  required
                   InputProps={{
-                    sx: {
-                      borderRadius: '12px',
-                      backgroundColor: 'rgba(243, 244, 246, 0.5)'
-                    },
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Phone className="text-gray-400" />
+                      </InputAdornment>
+                    ),
+                    inputProps: {
+                      pattern: "[0-9]{10}",
+                      maxLength: 10
+                    }
+                  }}
+                  helperText="Enter 10-digit mobile number"
+                />
+
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock className="text-gray-400" />
+                      </InputAdornment>
+                    ),
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
                           onClick={() => setShowPassword(!showPassword)}
                           edge="end"
                           size="small"
+                          sx={{ color: '#64748B' }}
                         >
-                          {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </IconButton>
                       </InputAdornment>
-                    )
+                    ),
                   }}
-                  autoComplete="current-password"
                 />
-              </div>
-            )}
 
-            {/* Options - Only shown when using password */}
-            {!useOTP && (
-              <div className="flex items-center">
-                <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      size="small"
-                    />
+                <div className="flex items-center justify-between">
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.rememberMe}
+                        onChange={(e) => 
+                          setFormData({ ...formData, rememberMe: e.target.checked })
+                        }
+                        size="medium"
+                        sx={{
+                          color: "#9CA3AF",
+                          '&.Mui-checked': {
+                            color: "#2A7F62",
+                          },
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" color="#64748B">
+                        Remember me
+                      </Typography>
+                    }
+                  />
+                  <Link 
+                    href="/auth/forgot-password" 
+                    className="text-sm font-medium text-[#2A7F62] hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                <Button
+  type="submit"
+  fullWidth
+  variant="contained"
+  size="large"
+  disabled={isLoading}
+  sx={{
+    py: 2,
+    fontSize: '1rem',
+    fontWeight: 600,
+    letterSpacing: '0.5px',
+    background: 'linear-gradient(90deg, #2A7F62, #3A5E6D)',
+    "&:hover": {
+      background: 'linear-gradient(90deg, #1E6D54, #2C4D5D)',
+      boxShadow: '0 4px 12px rgba(42, 127, 98, 0.3)'
+    },
+    "&.Mui-disabled": {
+      background: '#E2E8F0',
+      color: '#94A3B8'
+    }
+  }}
+>
+  {isLoading ? (
+    <CircularProgress size={24} color="inherit" />
+  ) : (
+    `Sign In as ${tabValue === 'doctor' ? 'Doctor' : 'Patient'}`
+  )}
+</Button>
+
+                <Divider sx={{ 
+                  my: 2,
+                  '&::before, &::after': {
+                    borderColor: '#E2E8F0',
                   }
-                  label={
-                    <Typography variant="body2" className="text-gray-600">
-                      Remember me
-                    </Typography>
-                  }
-                />
-              </div>
-            )}
+                }}>
+                  <Typography variant="body2" sx={{ 
+                    color: "#64748B",
+                    px: 2,
+                    backgroundColor: '#F8FAFC'
+                  }}>
+                    New to MediPortal?
+                  </Typography>
+                </Divider>
 
-            {/* OTP Toggle */}
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={useOTP}
-                  onChange={(e) => setUseOTP(e.target.checked)}
-                  size="small"
-                />
-              }
-              label={
-                <Typography variant="body2" className="text-gray-600">
-                  Login with OTP instead
-                </Typography>
-              }
-            />
-
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              className="py-3"
-              disabled={isLoading}
-              startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
-              sx={{
-                borderRadius: '12px',
-                fontWeight: 'bold',
-                fontSize: '1rem',
-                textTransform: 'none',
-                background: 'linear-gradient(90deg, #3b82f6, #6366f1)',
-                '&:hover': {
-                  background: 'linear-gradient(90deg, #2563eb, #4f46e5)'
-                },
-                '&.Mui-disabled': {
-                  background: 'rgba(0, 0, 0, 0.12)'
-                }
-              }}
-            >
-              {isLoading ? (useOTP ? 'Sending OTP...' : 'Logging in...') : (useOTP ? 'Send OTP' : 'Login')}
-            </Button>
-
-            <div className="text-center mt-4 space-y-2">
-              <Typography variant="body2" className="text-gray-600">
-                Don't have an account?{' '}
-                <Link 
-                  href="/auth/register" 
-                  color="primary" 
-                  fontWeight="medium"
-                  underline="hover"
-                >
-                  Register as Patient
-                </Link>
-              </Typography>
-              <Typography variant="body2" className="text-gray-600">
-                Healthcare provider?{' '}
-                <Link 
-                  href="/auth/doctor-register" 
-                  color="primary" 
-                  fontWeight="medium"
-                  underline="hover"
-                >
-                  Doctor Portal
-                </Link>
-              </Typography>
-            </div>
-          </form>
-        </Paper>
+                <div className="flex flex-col space-y-3">
+                  <Button 
+                    variant="outlined"
+                    fullWidth
+                    component={Link}
+                    href="/auth/register"
+                    startIcon={<User className="h-5 w-5" />}
+                    sx={{
+                      color: "#2D3748",
+                      borderColor: "#E2E8F0",
+                      py: 1.5,
+                      '&:hover': {
+                        borderColor: "#2A7F62",
+                        backgroundColor: 'rgba(42, 127, 98, 0.05)'
+                      }
+                    }}
+                  >
+                    Register as Patient
+                  </Button>
+                  <Button 
+                    variant="outlined"
+                    fullWidth
+                    component={Link}
+                    href="/auth/doctor-register"
+                    startIcon={<UserCheck className="h-5 w-5" />}
+                    sx={{
+                      color: "#2D3748",
+                      borderColor: "#E2E8F0",
+                      py: 1.5,
+                      '&:hover': {
+                        borderColor: "#2A7F62",
+                        backgroundColor: 'rgba(42, 127, 98, 0.05)'
+                      }
+                    }}
+                  >
+                    Register as Doctor
+                  </Button>
+                </div>
+              </Box>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-      
-      
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </div>
+    </MuiThemeProvider>
   );
 }

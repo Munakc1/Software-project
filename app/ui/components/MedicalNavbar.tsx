@@ -1,21 +1,113 @@
-"use client";
-import React from 'react';
-import { Notifications, AccountCircle, Settings, HelpOutline, ExitToApp, Person, ArrowDropDown } from '@mui/icons-material';
-import { Badge, IconButton, Drawer, List, ListItem, ListItemIcon, ListItemText, Menu, MenuItem, Avatar, Button } from '@mui/material';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+'use client';
 
-const MedicalNavbar = () => {
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [notificationAnchorEl, setNotificationAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [registerAnchorEl, setRegisterAnchorEl] = React.useState<null | HTMLElement>(null);
-  const router = useRouter();
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@mui/material";
+import {
+  Calendar,
+  FileText,
+  Shield,
+  Pill,
+  Bell,
+  User,
+  LogOut,
+  Moon,
+  Sun,
+} from "lucide-react";
+import {
+  Menu as MuiMenu,
+  MenuItem,
+  ListItemButton,
+  Divider,
+  Badge,
+  IconButton,
+  ThemeProvider as MuiThemeProvider,
+  createTheme,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Avatar,
+  Drawer,
+  Box
+} from "@mui/material";
+import MenuIcon from '@mui/icons-material/Menu';
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+interface NavItem {
+  name: string;
+  path: string;
+}
+
+const navigationItems: NavItem[] = [
+  { name: "Medical Records", path: "/medical-records" },
+  { name: "Appointments", path: "/appointments" },
+  { name: "Prescriptions", path: "/prescriptions" },
+  { name: "Vaccination", path: "/vaccination" },
+];
+
+interface Notification {
+  id: number;
+  title: string;
+  description: string;
+  time: string;
+  read: boolean;
+}
+
+const notifications: Notification[] = [
+  {
+    id: 1,
+    title: 'Polio vaccine reminder',
+    description: 'Due on Aug 10',
+    time: '2 hours ago',
+    read: false
+  },
+  {
+    id: 2,
+    title: 'Upcoming Appointment',
+    description: 'Tomorrow at 10:00 AM',
+    time: '1 day ago',
+    read: true
+  },
+  {
+    id: 3,
+    title: 'Lab Results Available',
+    description: 'CBC report ready for review',
+    time: '3 days ago',
+    read: true
+  }
+];
+
+export function MedicalNavbar() {
+  const pathname = usePathname();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
+  const [registerAnchorEl, setRegisterAnchorEl] = useState<null | HTMLElement>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Initialize theme and notifications
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+    
+    const unread = notifications.filter(n => !n.read).length;
+    setUnreadCount(unread);
+  }, []);
+
+  // Apply theme changes
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+
+  const isActive = (path: string) => pathname === path;
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -27,6 +119,7 @@ const MedicalNavbar = () => {
 
   const handleNotificationOpen = (event: React.MouseEvent<HTMLElement>) => {
     setNotificationAnchorEl(event.currentTarget);
+    setUnreadCount(0);
   };
 
   const handleNotificationClose = () => {
@@ -41,471 +134,408 @@ const MedicalNavbar = () => {
     setRegisterAnchorEl(null);
   };
 
-  const handleLogout = () => {
-    console.log('User logged out');
-    router.push('/auth/login');
-    handleMenuClose();
-    handleDrawerToggle();
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
   };
 
-  const navItems = [
-    { name: 'Medical Records', path: '/medical-records' },
-    { name: 'Vaccination', path: '/vaccination' },
-    { name: 'Prescriptions & Lab Reports', path: '/prescriptions' },
-    { name: 'Appointments', path: '/appointments' },
-  ];
-
-  const accountMenuItems = [
-    { name: 'My Profile', icon: <Person fontSize="small" />, path: '/profile' },
-    { name: 'Settings', icon: <Settings fontSize="small" />, path: '/settings' },
-    { name: 'Help & Support', icon: <HelpOutline fontSize="small" />, path: '/support' },
-    { name: 'Logout', icon: <ExitToApp fontSize="small" />, action: handleLogout },
-  ];
-
-  const notifications = [
-    {
-      id: 1,
-      title: 'Polio vaccine reminder',
-      description: 'Due on Aug 10',
-      icon: (
-        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-          <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-      )
+  // MUI theme with custom medical colors
+  const muiTheme = createTheme({
+    palette: {
+      mode: theme,
+      primary: {
+        main: theme === "dark" ? "#2E7D32" : "#2A7F62",
+      },
+      secondary: {
+        main: theme === "dark" ? "#1E3A4D" : "#3A5E6D",
+      },
+      error: {
+        main: theme === "dark" ? "#FF5252" : "#D32F2F",
+      },
+      success: {
+        main: theme === "dark" ? "#4CAF50" : "#388E3C",
+      },
+      background: {
+        default: theme === "dark" ? "#121212" : "#FFFFFF",
+        paper: theme === "dark" ? "#1E1E1E" : "#F5F9F8",
+      },
+      text: {
+        primary: theme === "dark" ? "#E0E0E0" : "#2D3748",
+      },
     },
-    {
-      id: 2,
-      title: 'Upcoming Appointment',
-      description: 'Tomorrow at 10:00 AM',
-      icon: (
-        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-          <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
-      )
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            fontWeight: 500,
+            fontSize: '0.9rem',
+            padding: '8px 16px'
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+          },
+        },
+      },
     },
-    {
-      id: 3,
-      title: 'Lab Results Available',
-      description: 'CBC report ready for review',
-      icon: (
-        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-          <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        </div>
-      )
-    }
-  ];
+  });
+
+  const drawer = (
+    <Box 
+      sx={{ 
+        width: 250,
+        backgroundColor: theme === "dark" ? "#1E1E1E" : "#F5F9F8",
+        height: '100%',
+        padding: '20px 0'
+      }}
+    >
+      <List>
+        {navigationItems.map((item) => (
+          <ListItem 
+            key={item.name}
+            disablePadding
+            sx={{
+              '&:hover': {
+                backgroundColor: isActive(item.path) 
+                  ? (theme === "dark" ? "#2E7D32" : "#2A7F62") + '20'
+                  : (theme === "dark" ? "#2E7D32" : "#2A7F62") + '10',
+              },
+            }}
+          >
+            <ListItemButton 
+              component={Link}
+              href={item.path}
+              onClick={handleDrawerToggle}
+              sx={{
+                color: isActive(item.path) 
+                  ? (theme === "dark" ? "#4CAF50" : "#2A7F62")
+                  : (theme === "dark" ? "#E0E0E0" : "#2D3748"),
+                backgroundColor: isActive(item.path) 
+                  ? (theme === "dark" ? "#2E7D32" : "#2A7F62") + '20'
+                  : 'transparent',
+                padding: '12px 24px'
+              }}
+            >
+              <ListItemText primary={item.name} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider sx={{ 
+        backgroundColor: theme === "dark" ? "#424242" : "#E2E8F0"
+      }} />
+      <Box sx={{ padding: '16px 24px' }}>
+        <Button 
+          fullWidth
+          variant="outlined"
+          href="/auth/login"
+          sx={{
+            mb: 2,
+            fontSize: '0.95rem',
+            color: theme === "dark" ? "#E0E0E0" : "#2D3748",
+            borderColor: theme === "dark" ? "#424242" : "#E2E8F0",
+            '&:hover': {
+              borderColor: theme === "dark" ? "#E0E0E0" : "#2D3748",
+            }
+          }}
+        >
+          Login
+        </Button>
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={handleRegisterOpen}
+          sx={{
+            fontSize: '0.95rem',
+            backgroundColor: theme === "dark" ? "#2E7D32" : "#2A7F62",
+            "&:hover": {
+              backgroundColor: theme === "dark" ? "#1B5E20" : "#1E6D54",
+            },
+            marginTop: '12px'
+          }}
+        >
+          Register
+        </Button>
+      </Box>
+    </Box>
+  );
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50 w-full border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex justify-between items-center h-16 w-full">
-          {/* Left side - Logo and navigation */}
+    <MuiThemeProvider theme={muiTheme}>
+      <header 
+        className={`sticky top-0 z-50 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
+          theme === "dark" 
+            ? "bg-[#121212] border-[#424242]" 
+            : "bg-[#FFFFFF] border-[#E2E8F0]"
+        }`}
+      >
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          {/* Mobile menu button and logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center">
-              <Image 
-                src="/images/logo.png"
-                alt="Patient Care Portal"
-                width={180}
-                height={40}
-                className="h-10 w-auto"
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { md: 'none' } }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              <img 
+                src="/images/logo.png" 
+                alt="MediPortal Logo"
+                className="h-40 w-40 object-contain" 
               />
+         
             </Link>
-
-            {/* Middle - Navigation items (hidden on mobile) */}
-            <nav className="hidden md:flex space-x-8 ml-10">
-              {navItems.map((item) => (
-                <Link 
-                  key={item.name} 
-                  href={item.path}
-                  className="text-gray-700 hover:text-gray-900 text-sm font-medium transition-colors duration-200 relative group"
-                >
-                  {item.name}
-                  <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-gray-900 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-              ))}
-            </nav>
           </div>
 
-          {/* Right side - Icons and buttons */}
-          <div className="flex items-center gap-4">
-            {/* Login and Register buttons (visible when not logged in) */}
-            <div className="hidden md:flex items-center gap-4">
-              <Link href="/auth/login" passHref>
-                <Button 
-                  variant="text" 
-                  className="text-black hover:bg-gray-100 font-medium normal-case text-sm px-4 py-2 rounded-md"
-                  size="medium"
-                >
-                  Login
-                </Button>
+          {/* Desktop Navigation - Center */}
+          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
+            {navigationItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.path}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive(item.path)
+                    ? 'text-primary border-b-2 border-primary pb-1'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                {item.name}
               </Link>
+            ))}
+          </nav>
+
+          {/* Right Side Actions */}
+          <div className="flex items-center space-x-4 md:space-x-6">
+            {/* Theme Toggle */}
+            <IconButton 
+              onClick={toggleTheme} 
+              color="inherit"
+              sx={{ display: { xs: 'none', sm: 'flex' } }}
+            >
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </IconButton>
+
+            {/* Notifications */}
+            <IconButton 
+              color="inherit"
+              onClick={handleNotificationOpen}
+            >
+              <Badge badgeContent={unreadCount} color="error">
+                <Bell className="h-5 w-5" />
+              </Badge>
+            </IconButton>
+
+            {/* User Menu */}
+            <div className="hidden sm:block">
+              <IconButton
+                onClick={handleMenuOpen}
+                color="inherit"
+              >
+                <User className="h-5 w-5" />
+              </IconButton>
+              <MuiMenu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                PaperProps={{
+                  sx: {
+                    backgroundColor: theme === "dark" ? "#1E1E1E" : "#F5F9F8",
+                  }
+                }}
+              >
+                <MenuItem onClick={handleMenuClose}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </MenuItem>
+                <MenuItem onClick={handleMenuClose}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  <span>My Appointments</span>
+                </MenuItem>
+                <MenuItem onClick={handleMenuClose}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  <span>Medical History</span>
+                </MenuItem>
+                <Divider />
+                <MenuItem 
+                  onClick={handleMenuClose} 
+                  sx={{ color: theme === "dark" ? "#FF5252" : "#D32F2F" }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </MenuItem>
+              </MuiMenu>
+            </div>
+
+            {/* Auth Buttons - Desktop */}
+            <div className="hidden sm:flex items-center space-x-4">
+              <Button 
+                variant="outlined" 
+                size="small" 
+                href="/auth/login"
+                sx={{
+                  color: theme === "dark" ? "#E0E0E0" : "#2D3748",
+                  borderColor: theme === "dark" ? "#424242" : "#E2E8F0",
+                  '&:hover': {
+                    borderColor: theme === "dark" ? "#E0E0E0" : "#2D3748",
+                  },
+                  minWidth: 90,
+                  padding: '6px 16px'
+                }}
+              >
+                Login
+              </Button>
               
               <Button
-                variant="outlined"
-                endIcon={<ArrowDropDown />}
+                variant="contained"
+                size="small"
                 onClick={handleRegisterOpen}
-                className="border-gray-300 text-black hover:bg-gray-50 font-medium normal-case text-sm px-4 py-2 rounded-md"
-                size="medium"
+                sx={{
+                  backgroundColor: theme === "dark" ? "#2E7D32" : "#2A7F62",
+                  "&:hover": {
+                    backgroundColor: theme === "dark" ? "#1B5E20" : "#1E6D54",
+                  },
+                  minWidth: 100,
+                  padding: '6px 16px',
+                  marginLeft: '12px'
+                }}
               >
                 Register
               </Button>
               
-              <Menu
+              <MuiMenu
                 anchorEl={registerAnchorEl}
                 open={Boolean(registerAnchorEl)}
                 onClose={handleRegisterClose}
                 PaperProps={{
-                  style: {
-                    width: '220px',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  },
+                  sx: {
+                    backgroundColor: theme === "dark" ? "#1E1E1E" : "#F5F9F8",
+                  }
                 }}
               >
                 <MenuItem 
                   onClick={handleRegisterClose} 
                   component={Link} 
                   href="/auth/register"
-                  className="hover:bg-gray-50"
                 >
-                  <ListItemText primary="Register as Patient" className="text-gray-800" />
+                  <ListItemText primary="Register as Patient" />
                 </MenuItem>
                 <MenuItem 
                   onClick={handleRegisterClose} 
                   component={Link} 
                   href="/auth/doctor-register"
-                  className="hover:bg-gray-50"
                 >
-                  <ListItemText primary="Register as Doctor" className="text-gray-800" />
+                  <ListItemText primary="Register as Doctor" />
                 </MenuItem>
-              </Menu>
+              </MuiMenu>
             </div>
-
-            {/* Notification and Account icons */}
-            <div className="flex items-center gap-2">
-              <IconButton 
-                aria-label="notifications" 
-                color="inherit" 
-                className="text-gray-600 hover:bg-gray-100"
-                onClick={handleNotificationOpen}
-                size="medium"
-              >
-                <Badge badgeContent={notifications.length} color="error">
-                  <Notifications fontSize="medium" />
-                </Badge>
-              </IconButton>
-              
-              <IconButton
-                edge="end"
-                aria-label="account"
-                aria-controls="account-menu"
-                aria-haspopup="true"
-                onClick={handleMenuOpen}
-                color="inherit"
-                className="text-gray-600 hover:bg-gray-100"
-                size="medium"
-              >
-                <AccountCircle fontSize="medium" />
-              </IconButton>
-            </div>
-
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden rounded-md p-2 text-gray-600 hover:bg-gray-100 focus:outline-none"
-              onClick={handleDrawerToggle}
-              aria-label="Toggle menu"
-            >
-              <svg
-                className="h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d={mobileOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
-                />
-              </svg>
-            </button>
           </div>
 
           {/* Notification Menu */}
-          <Menu
-            id="notification-menu"
+          <MuiMenu
             anchorEl={notificationAnchorEl}
-            keepMounted
             open={Boolean(notificationAnchorEl)}
             onClose={handleNotificationClose}
             PaperProps={{
-              style: {
-                width: '380px',
-                padding: '0',
+              sx: {
+                width: { xs: '90vw', sm: 380 },
                 maxHeight: '80vh',
-                overflow: 'auto',
-                borderRadius: '12px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-              },
+                backgroundColor: theme === "dark" ? "#1E1E1E" : "#F5F9F8",
+                p: 0
+              }
             }}
           >
             <div className="p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Recent Notifications</h3>
-              <div className="space-y-4">
+              <h3 className={`text-lg font-semibold ${
+                theme === "dark" ? "text-[#E0E0E0]" : "text-[#2D3748]"
+              } mb-3`}>
+                Recent Notifications
+              </h3>
+              <List>
                 {notifications.map((notification) => (
-                  <div key={notification.id} className="flex items-start p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                    {notification.icon}
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">{notification.title}</p>
-                      <p className="text-sm text-gray-500">{notification.description}</p>
-                    </div>
-                  </div>
+                  <ListItem 
+                    key={notification.id}
+                    className={`hover:bg-opacity-10 hover:bg-${
+                      theme === "dark" ? "[#4CAF50]" : "[#2A7F62]"
+                    } transition-colors`}
+                  >
+                    <ListItemIcon>
+                      <Avatar sx={{ 
+                        bgcolor: theme === "dark" ? "#2E7D32" : "#2A7F62",
+                        width: 32,
+                        height: 32
+                      }}>
+                        <Bell className="h-4 w-4" />
+                      </Avatar>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={notification.title}
+                      secondary={
+                        <>
+                          <span className={`block ${theme === "dark" ? "text-[#B0B0B0]" : "text-[#6B7280]"}`}>
+                            {notification.description}
+                          </span>
+                          <span className={`text-xs ${theme === "dark" ? "text-[#757575]" : "text-[#9CA3AF]"}`}>
+                            {notification.time}
+                          </span>
+                        </>
+                      }
+                      primaryTypographyProps={{
+                        className: theme === "dark" ? "text-[#E0E0E0]" : "text-[#2D3748]",
+                        fontWeight: 500
+                      }}
+                    />
+                    {!notification.read && (
+                      <div className={`h-2 w-2 rounded-full ${
+                        theme === "dark" ? "bg-[#FF5252]" : "bg-[#D32F2F]"
+                      }`} />
+                    )}
+                  </ListItem>
                 ))}
-              </div>
-              <div className="mt-4 pt-3 border-t border-gray-100">
-                <button className="w-full text-center text-sm font-medium text-gray-700 hover:text-gray-900">
-                  View all notifications
-                </button>
-              </div>
-            </div>
-          </Menu>
-          
-          {/* Account Menu */}
-          <Menu
-            id="account-menu"
-            anchorEl={anchorEl}
-            keepMounted
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            PaperProps={{
-              elevation: 0,
-              sx: {
-                overflow: 'visible',
-                filter: 'drop-shadow(0px 2px 12px rgba(0,0,0,0.12))',
-                mt: 1.5,
-                borderRadius: '8px',
-                '& .MuiAvatar-root': {
-                  width: 32,
-                  height: 32,
-                  ml: -0.5,
-                  mr: 1,
-                },
-                '&:before': {
-                  content: '""',
-                  display: 'block',
-                  position: 'absolute',
-                  top: 0,
-                  right: 14,
-                  width: 10,
-                  height: 10,
-                  bgcolor: 'background.paper',
-                  transform: 'translateY(-50%) rotate(45deg)',
-                  zIndex: 0,
-                },
-              },
-            }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          >
-            <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-sm font-medium text-gray-900">Signed in as</p>
-              <p className="text-sm text-gray-500 truncate">user@example.com</p>
-            </div>
-            {accountMenuItems.map((item) => (
-              item.path ? (
-                <MenuItem 
-                  key={item.name} 
-                  onClick={() => {
-                    handleMenuClose();
-                    router.push(item.path);
+              </List>
+              <div className={`mt-4 pt-3 border-t ${
+                theme === "dark" ? "border-[#424242]" : "border-[#E2E8F0]"
+              }`}>
+                <Button 
+                  fullWidth
+                  sx={{
+                    color: theme === "dark" ? "#4CAF50" : "#2A7F62",
+                    fontWeight: 500
                   }}
-                  className="py-2 px-4 hover:bg-gray-50"
                 >
-                  <ListItemIcon className="min-w-[40px] text-gray-600">{item.icon}</ListItemIcon>
-                  <ListItemText 
-                    primary={item.name} 
-                    primaryTypographyProps={{ 
-                      fontSize: '0.875rem',
-                      fontWeight: 500 
-                    }} 
-                  />
-                </MenuItem>
-              ) : (
-                <MenuItem 
-                  onClick={item.action} 
-                  key={item.name}
-                  className="py-2 px-4 hover:bg-gray-50"
-                >
-                  <ListItemIcon className="min-w-[40px] text-gray-600">{item.icon}</ListItemIcon>
-                  <ListItemText 
-                    primary={item.name} 
-                    primaryTypographyProps={{ 
-                      fontSize: '0.875rem',
-                      fontWeight: 500 
-                    }} 
-                  />
-                </MenuItem>
-              )
-            ))}
-          </Menu>
+                  View all notifications
+                </Button>
+              </div>
+            </div>
+          </MuiMenu>
         </div>
 
         {/* Mobile drawer */}
         <Drawer
           variant="temporary"
-          anchor="right"
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
             keepMounted: true,
           }}
           sx={{
-            '& .MuiDrawer-paper': {
-              width: 300,
-              boxSizing: 'border-box',
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: 250,
+              backgroundColor: theme === "dark" ? "#1E1E1E" : "#F5F9F8"
             },
           }}
         >
-          <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <Image 
-                src="/images/logo.png" 
-                alt="Patient Care Portal"
-                width={160}
-                height={35}
-                className="h-9 w-auto"
-              />
-              <button 
-                onClick={handleDrawerToggle} 
-                className="text-gray-500 hover:text-gray-700"
-                aria-label="Close menu"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="flex-grow overflow-y-auto">
-              <List>
-                {navItems.map((item) => (
-                  <ListItem 
-                    key={item.name}
-                    component="button"
-                    onClick={() => {
-                      router.push(item.path);
-                      handleDrawerToggle();
-                    }}
-                    className="hover:bg-gray-50 px-4 py-3 transition-colors"
-                  >
-                    <ListItemText 
-                      primary={item.name} 
-                      primaryTypographyProps={{
-                        className: "text-gray-800 font-medium text-sm"
-                      }}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-              
-              {/* Mobile Login/Register section */}
-              <div className="border-t border-gray-200 px-4 py-3">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Account</h3>
-                <List>
-                  <ListItem 
-                    component="button"
-                    onClick={() => {
-                      router.push('/auth/login');
-                      handleDrawerToggle();
-                    }}
-                    className="hover:bg-gray-50 px-0 py-2 transition-colors"
-                  >
-                    <ListItemText 
-                      primary="Login" 
-                      primaryTypographyProps={{
-                        className: "text-gray-800 font-medium text-sm"
-                      }}
-                    />
-                  </ListItem>
-                  
-                  <ListItem
-                    component="button"
-                    onClick={() => {
-                      router.push('/auth/register');
-                      handleDrawerToggle();
-                    }}
-                    className="hover:bg-gray-50 px-0 py-2 transition-colors"
-                  >
-                    <ListItemText
-                      primary="Register as Patient"
-                      primaryTypographyProps={{
-                        className: "text-gray-800 font-medium text-sm"
-                      }}
-                    />
-                  </ListItem>
-
-                  <ListItem
-                    component="button"
-                    onClick={() => {
-                      router.push('/auth/doctor-register');
-                      handleDrawerToggle();
-                    }}
-                    className="hover:bg-gray-50 px-0 py-2 transition-colors"
-                  >
-                    <ListItemText
-                      primary="Register as Doctor"
-                      primaryTypographyProps={{
-                        className: "text-gray-800 font-medium text-sm"
-                      }}
-                    />
-                  </ListItem>
-                </List>
-              </div>
-              
-              {/* Account menu items (visible when logged in) */}
-              <div className="border-t border-gray-200 px-4 py-3">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">My Account</h3>
-                <List>
-                  {accountMenuItems.map((item) => (
-                    <ListItem 
-                      key={item.name}
-                      component="button"
-                      onClick={() => {
-                        if (item.action) {
-                          item.action();
-                        } else if (item.path) {
-                          router.push(item.path);
-                        }
-                        handleDrawerToggle();
-                      }}
-                      className="hover:bg-gray-50 px-0 py-2 transition-colors"
-                    >
-                      <ListItemIcon className="min-w-0 mr-3 text-gray-600">
-                        {item.icon}
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={item.name} 
-                        primaryTypographyProps={{
-                          className: "text-gray-800 font-medium text-sm"
-                        }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </div>
-            </div>
-          </div>
+          {drawer}
         </Drawer>
-      </div>
-    </header>
+      </header>
+    </MuiThemeProvider>
   );
-};
-
-export default MedicalNavbar;
+}
