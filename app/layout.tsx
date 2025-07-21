@@ -5,6 +5,7 @@ import './globals.css';
 import { MedicalNavbar } from './ui/components/MedicalNavbar';
 import { Footer } from './ui/components/Footer';
 import { AppThemeProvider } from './ui/components/ThemeContext';
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -36,6 +37,17 @@ export default function RootLayout({
             {/* Footer with seamless connection */}
             <Footer />
           </div>
+          
+          {/* Sonner Toaster - positioned fixed in viewport */}
+          <Toaster 
+            position="top-right" 
+            richColors 
+            toastOptions={{
+              style: {
+                fontFamily: inter.style.fontFamily,
+              },
+            }}
+          />
         </AppThemeProvider>
       </body>
     </html>
