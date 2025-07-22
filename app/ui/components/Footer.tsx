@@ -20,6 +20,7 @@ import {
   Instagram,
   Linkedin
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 const quickLinks = [
   { name: "About Us", href: "/about" },
@@ -48,6 +49,10 @@ const socialLinks = [
   { name: "Instagram", icon: Instagram, href: "#" },
   { name: "LinkedIn", icon: Linkedin, href: "#" },
 ];
+
+const hoverColor = "#5D8BA3"; // A lighter shade of the primary color for hover effects
+const textHoverColor = "#FFFFFF"; // White for text hover
+const socialHoverColor = "#2C4B5A"; // A darker shade for social buttons
 
 export function Footer() {
   return (
@@ -86,18 +91,23 @@ export function Footer() {
             gap: 3,
             pr: 2
           }}>
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: 700,
-                color: 'white',
-                fontSize: { xs: '1.8rem', md: '2.2rem' },
-                lineHeight: 1.2,
-                mb: 1
-              }}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              Medipal
-            </Typography>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 700,
+                  color: 'white',
+                  fontSize: { xs: '1.8rem', md: '2.2rem' },
+                  lineHeight: 1.2,
+                  mb: 1
+                }}
+              >
+                Medipal
+              </Typography>
+            </motion.div>
 
             <Typography
               variant="body1"
@@ -117,33 +127,27 @@ export function Footer() {
               gap: 2.5,
               mt: 2
             }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Phone color="white" size={22} />
-                <Typography variant="body1" sx={{ 
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  fontSize: '1.05rem'
-                }}>
-                  +1 (555) 123-4567
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Mail color="white" size={22} />
-                <Typography variant="body1" sx={{ 
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  fontSize: '1.05rem'
-                }}>
-                  support@medipal.com
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <MapPin color="white" size={22} />
-                <Typography variant="body1" sx={{ 
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  fontSize: '1.05rem'
-                }}>
-                  123 Healthcare St, Medical City
-                </Typography>
-              </Box>
+              {[
+                { icon: Phone, text: "+1 (555) 123-4567" },
+                { icon: Mail, text: "support@medipal.com" },
+                { icon: MapPin, text: "123 Healthcare St, Medical City" }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ x: 5 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <item.icon color="white" size={22} />
+                    <Typography variant="body1" sx={{ 
+                      color: 'rgba(255, 255, 255, 0.85)',
+                      fontSize: '1.05rem'
+                    }}>
+                      {item.text}
+                    </Typography>
+                  </Box>
+                </motion.div>
+              ))}
             </Box>
           </Box>
 
@@ -166,34 +170,37 @@ export function Footer() {
             </Typography>
             <List sx={{ p: 0 }}>
               {quickLinks.map((link) => (
-                <ListItem key={link.name} sx={{ 
-                  p: 0, 
-                  mb: 1.5,
-                  '&:hover': {
-                    transform: 'translateX(4px)'
-                  },
-                  transition: 'transform 0.2s ease'
-                }}>
-                  <Link
-                    href={link.href}
-                    style={{ textDecoration: 'none', width: '100%' }}
-                  >
-                    <ListItemText
-                      primary={link.name}
-                      sx={{
-                        '& .MuiTypography-root': {
-                          color: 'rgba(255, 255, 255, 0.85)',
-                          fontSize: '1.05rem',
-                          fontWeight: 500,
-                          '&:hover': {
-                            color: 'white',
-                            fontWeight: 600
-                          }
+                <motion.div
+                  key={link.name}
+                  whileHover={{ x: 5 }}
+                  whileTap={{ x: 0 }}
+                >
+                  <ListItem sx={{ 
+                    p: 0, 
+                    mb: 1.5,
+                  }}>
+                    <Link
+                      href={link.href}
+                      style={{ textDecoration: 'none', width: '100%' }}
+                    >
+                      <ListItemText
+                        primary={
+                          <motion.span
+                            whileHover={{ color: textHoverColor }}
+                            style={{
+                              color: 'rgba(255, 255, 255, 0.85)',
+                              fontSize: '1.05rem',
+                              fontWeight: 500,
+                              display: 'inline-block'
+                            }}
+                          >
+                            {link.name}
+                          </motion.span>
                         }
-                      }}
-                    />
-                  </Link>
-                </ListItem>
+                      />
+                    </Link>
+                  </ListItem>
+                </motion.div>
               ))}
             </List>
           </Box>
@@ -217,34 +224,37 @@ export function Footer() {
             </Typography>
             <List sx={{ p: 0 }}>
               {services.map((service) => (
-                <ListItem key={service.name} sx={{ 
-                  p: 0, 
-                  mb: 1.5,
-                  '&:hover': {
-                    transform: 'translateX(4px)'
-                  },
-                  transition: 'transform 0.2s ease'
-                }}>
-                  <Link
-                    href={service.href}
-                    style={{ textDecoration: 'none', width: '100%' }}
-                  >
-                    <ListItemText
-                      primary={service.name}
-                      sx={{
-                        '& .MuiTypography-root': {
-                          color: 'rgba(255, 255, 255, 0.85)',
-                          fontSize: '1.05rem',
-                          fontWeight: 500,
-                          '&:hover': {
-                            color: 'white',
-                            fontWeight: 600
-                          }
+                <motion.div
+                  key={service.name}
+                  whileHover={{ x: 5 }}
+                  whileTap={{ x: 0 }}
+                >
+                  <ListItem sx={{ 
+                    p: 0, 
+                    mb: 1.5,
+                  }}>
+                    <Link
+                      href={service.href}
+                      style={{ textDecoration: 'none', width: '100%' }}
+                    >
+                      <ListItemText
+                        primary={
+                          <motion.span
+                            whileHover={{ color: textHoverColor }}
+                            style={{
+                              color: 'rgba(255, 255, 255, 0.85)',
+                              fontSize: '1.05rem',
+                              fontWeight: 500,
+                              display: 'inline-block'
+                            }}
+                          >
+                            {service.name}
+                          </motion.span>
                         }
-                      }}
-                    />
-                  </Link>
-                </ListItem>
+                      />
+                    </Link>
+                  </ListItem>
+                </motion.div>
               ))}
             </List>
           </Box>
@@ -269,34 +279,37 @@ export function Footer() {
               </Typography>
               <List sx={{ p: 0 }}>
                 {legalLinks.map((link) => (
-                  <ListItem key={link.name} sx={{ 
-                    p: 0, 
-                    mb: 1.5,
-                    '&:hover': {
-                      transform: 'translateX(4px)'
-                    },
-                    transition: 'transform 0.2s ease'
-                  }}>
-                    <Link
-                      href={link.href}
-                      style={{ textDecoration: 'none', width: '100%' }}
-                    >
-                      <ListItemText
-                        primary={link.name}
-                        sx={{
-                          '& .MuiTypography-root': {
-                            color: 'rgba(255, 255, 255, 0.85)',
-                            fontSize: '1.05rem',
-                            fontWeight: 500,
-                            '&:hover': {
-                              color: 'white',
-                              fontWeight: 600
-                            }
+                  <motion.div
+                    key={link.name}
+                    whileHover={{ x: 5 }}
+                    whileTap={{ x: 0 }}
+                  >
+                    <ListItem sx={{ 
+                      p: 0, 
+                      mb: 1.5,
+                    }}>
+                      <Link
+                        href={link.href}
+                        style={{ textDecoration: 'none', width: '100%' }}
+                      >
+                        <ListItemText
+                          primary={
+                            <motion.span
+                              whileHover={{ color: textHoverColor }}
+                              style={{
+                                color: 'rgba(255, 255, 255, 0.85)',
+                                fontSize: '1.05rem',
+                                fontWeight: 500,
+                                display: 'inline-block'
+                              }}
+                            >
+                              {link.name}
+                            </motion.span>
                           }
-                        }}
-                      />
-                    </Link>
-                  </ListItem>
+                        />
+                      </Link>
+                    </ListItem>
+                  </motion.div>
                 ))}
               </List>
             </Box>
@@ -322,23 +335,27 @@ export function Footer() {
                 {socialLinks.map((social) => {
                   const Icon = social.icon;
                   return (
-                    <IconButton
+                    <motion.div
                       key={social.name}
-                      href={social.href}
-                      aria-label={social.name}
-                      sx={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        color: 'white',
-                        p: 1.5,
-                        '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                          transform: 'scale(1.1)'
-                        },
-                        transition: 'all 0.2s ease'
-                      }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                     >
-                      <Icon size={22} />
-                    </IconButton>
+                      <IconButton
+                        href={social.href}
+                        aria-label={social.name}
+                        sx={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                          color: 'white',
+                          p: 1.5,
+                          '&:hover': {
+                            backgroundColor: socialHoverColor,
+                          },
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <Icon size={22} />
+                      </IconButton>
+                    </motion.div>
                   );
                 })}
               </Box>
@@ -359,16 +376,20 @@ export function Footer() {
           gap: 3,
           pt: 2
         }}>
-          <Typography
-            variant="body1"
-            sx={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '1rem',
-              textAlign: { xs: 'center', md: 'left' }
-            }}
+          <motion.div
+            whileHover={{ scale: 1.02 }}
           >
-            © {new Date().getFullYear()} Medipal. All rights reserved.
-          </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '1rem',
+                textAlign: { xs: 'center', md: 'left' }
+              }}
+            >
+              © {new Date().getFullYear()} Medipal. All rights reserved.
+            </Typography>
+          </motion.div>
           
           <Box sx={{
             display: 'flex',
@@ -378,41 +399,31 @@ export function Footer() {
             gap: 2,
             color: 'rgba(255, 255, 255, 0.8)'
           }}>
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              fontSize: '1rem'
-            }}>
-              <Box component="span" sx={{ fontSize: '1.1rem' }}>🔒</Box>
-              <Typography variant="body1">HIPAA Compliant</Typography>
-            </Box>
-            <Divider orientation="vertical" flexItem sx={{ 
-              borderColor: 'rgba(255, 255, 255, 0.3)',
-              height: '1.2rem'
-            }} />
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              fontSize: '1rem'
-            }}>
-              <Box component="span" sx={{ fontSize: '1.1rem' }}>🛡️</Box>
-              <Typography variant="body1">SSL Secured</Typography>
-            </Box>
-            <Divider orientation="vertical" flexItem sx={{ 
-              borderColor: 'rgba(255, 255, 255, 0.3)',
-              height: '1.2rem'
-            }} />
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              fontSize: '1rem'
-            }}>
-              <Box component="span" sx={{ fontSize: '1.1rem' }}>📱</Box>
-              <Typography variant="body1">Mobile Ready</Typography>
-            </Box>
+            {[
+              { icon: '🔒', text: 'HIPAA Compliant' },
+              { icon: '🛡️', text: 'SSL Secured' },
+              { icon: '📱', text: 'Mobile Ready' }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                whileHover={{ y: -2 }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Box component="span" sx={{ fontSize: '1.1rem' }}>{item.icon}</Box>
+                <Typography variant="body1">{item.text}</Typography>
+                {index < 2 && (
+                  <Divider orientation="vertical" flexItem sx={{ 
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    height: '1.2rem',
+                    mx: 1
+                  }} />
+                )}
+              </motion.div>
+            ))}
           </Box>
         </Box>
       </Box>
