@@ -55,13 +55,7 @@ interface Notification {
 }
 
 const notifications: Notification[] = [
-  {
-    id: 1,
-    title: 'Polio vaccine reminder',
-    description: 'Due on Aug 10',
-    time: '2 hours ago',
-    read: false
-  },
+  
   {
     id: 2,
     title: 'Upcoming Appointment',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
@@ -29,9 +29,6 @@ import {
   Stepper,
   Step,
   StepLabel,
-  RadioGroup,
-  Radio,
-  Avatar
 } from "@mui/material";
 import {
   Eye,
@@ -64,10 +61,75 @@ import {
 import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
 import { countries } from "countries-list";
 
+// Define TypeScript interfaces for the data structure
+interface Doctor {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  gender: string;
+  dateOfBirth: string;
+  licenseNumber: string;
+  specialization: string[];
+  yearsOfExperience: number;
+  hospital: string;
+  qualifications: string;
+  availableDays: string[];
+  consultationFee: number;
+  paymentMethods: string[];
+  address: string;
+  city: string;
+  country: string;
+  postalCode: string;
+  citizenshipNumber: string;
+  citizenshipIssuedDistrict: string;
+  licenseDocument: string;
+  degreeDocument: string;
+  citizenshipDocument: string;
+  profilePhoto: string;
+  isVerified: boolean;
+  verificationStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  count: number;
+  data: Doctor[];
+}
+
+interface FormData {
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  phone: string;
+  gender: string;
+  dateOfBirth: string;
+  licenseNumber: string;
+  specialization: string[];
+  yearsOfExperience: string;
+  hospital: string;
+  qualifications: string;
+  availableDays: string[];
+  consultationFee: string;
+  paymentMethods: string[];
+  address: string;
+  city: string;
+  country: string;
+  postalCode: string;
+  citizenshipNumber: string;
+  citizenshipIssuedDistrict: string;
+  licenseDocument: File | null;
+  degreeDocument: File | null;
+  citizenshipDocument: File | null;
+  profilePhoto: File | null;
+}
+
 export default function DoctorRegisterPage() {
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState({
-    // Personal Information
+  const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
     password: '',
@@ -75,30 +137,24 @@ export default function DoctorRegisterPage() {
     phone: '',
     gender: '',
     dateOfBirth: '',
-    
-    // Professional Information
     licenseNumber: '',
-    specialization: [] as string[],
+    specialization: [],
     yearsOfExperience: '',
     hospital: '',
     qualifications: '',
-    availableDays: [] as string[],
+    availableDays: [],
     consultationFee: '',
-    paymentMethods: [] as string[],
-    
-    // Address Information
+    paymentMethods: [],
     address: '',
     city: '',
     country: '',
     postalCode: '',
-    
-    // Verification Documents
     citizenshipNumber: '',
     citizenshipIssuedDistrict: '',
-    licenseDocument: null as File | null,
-    degreeDocument: null as File | null,
-    citizenshipDocument: null as File | null,
-    profilePhoto: null as File | null
+    licenseDocument: null,
+    degreeDocument: null,
+    citizenshipDocument: null,
+    profilePhoto: null
   });
   
   const [showPassword, setShowPassword] = useState(false);
@@ -110,33 +166,104 @@ export default function DoctorRegisterPage() {
     message: '',
     severity: 'info' as 'info' | 'success' | 'warning' | 'error'
   });
+  const [specializations, setSpecializations] = useState<string[]>([]);
+  const [availableDays, setAvailableDays] = useState<string[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [nepaliDistricts, setNepaliDistricts] = useState<string[]>([]);
 
   const router = useRouter();
 
-  // Data for dropdowns
-  const nepaliDistricts = [
-    'Kathmandu', 'Pokhara', 'Lalitpur', 'Bhaktapur', 'Biratnagar', 'Birgunj',
-    'Dharan', 'Bharatpur', 'Janakpur', 'Butwal', 'Hetauda', 'Dhangadhi',
-    'Nepalgunj', 'Itahari', 'Tulsipur', 'Birendranagar', 'Ghorahi', 'Kalaiya'
-  ];
+  // Fetch data from API or JSON file
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Try fetching from API first
+        const response = await fetch('http://localhost:5000/api/doctors', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-  const specializations = [
-    'Cardiology', 'Dermatology', 'Endocrinology', 'Family Medicine',
-    'Gastroenterology', 'General Surgery', 'Internal Medicine', 'Neurology',
-    'Obstetrics/Gynecology', 'Oncology', 'Ophthalmology', 'Orthopedics',
-    'Otolaryngology', 'Pediatrics', 'Psychiatry', 'Pulmonology',
-    'Radiology', 'Urology'
-  ];
+        if (response.ok) {
+          const data: ApiResponse = await response.json();
+          // Extract unique values for dropdowns
+          const uniqueSpecializations = Array.from(new Set(
+            data.data.flatMap(doctor => doctor.specialization)
+          ));
+          const uniqueDays = Array.from(new Set(
+            data.data.flatMap(doctor => doctor.availableDays)
+          ));
+          const uniquePayments = Array.from(new Set(
+            data.data.flatMap(doctor => doctor.paymentMethods)
+          ));
+          const uniqueDistricts = Array.from(new Set(
+            data.data.map(doctor => doctor.citizenshipIssuedDistrict)
+          ));
 
-  const availableDays = [
-    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 
-    'Thursday', 'Friday', 'Saturday'
-  ];
+          setSpecializations(uniqueSpecializations);
+          setAvailableDays(uniqueDays);
+          setPaymentMethods(uniquePayments);
+          setNepaliDistricts(uniqueDistricts);
+        } else {
+          throw new Error('API fetch failed');
+        }
+      } catch (error) {
+        console.error('API fetch error:', error);
+        // Fallback to local JSON file
+        try {
+          const response = await fetch('/mock/data.json');
+          if (response.ok) {
+            const data: ApiResponse = await response.json();
+            const uniqueSpecializations = Array.from(new Set(
+              data.data.flatMap(doctor => doctor.specialization)
+            ));
+            const uniqueDays = Array.from(new Set(
+              data.data.flatMap(doctor => doctor.availableDays)
+            ));
+            const uniquePayments = Array.from(new Set(
+              data.data.flatMap(doctor => doctor.paymentMethods)
+            ));
+            const uniqueDistricts = Array.from(new Set(
+              data.data.map(doctor => doctor.citizenshipIssuedDistrict)
+            ));
 
-  const paymentMethods = [
-    'Cash', 'Credit Card', 'Debit Card', 'Mobile Payment', 
-    'Bank Transfer', 'Insurance'
-  ];
+            setSpecializations(uniqueSpecializations);
+            setAvailableDays(uniqueDays);
+            setPaymentMethods(uniquePayments);
+            setNepaliDistricts(uniqueDistricts);
+          } else {
+            throw new Error('JSON fetch failed');
+          }
+        } catch (jsonError) {
+          console.error('JSON fetch error:', jsonError);
+          // Fallback to default values if both API and JSON fail
+          setSpecializations([
+            'Cardiology', 'Dermatology', 'Endocrinology', 'Family Medicine',
+            'Gastroenterology', 'General Surgery', 'Internal Medicine', 'Neurology',
+            'Obstetrics/Gynecology', 'Oncology', 'Ophthalmology', 'Orthopedics',
+            'Otolaryngology', 'Pediatrics', 'Psychiatry', 'Pulmonology',
+            'Radiology', 'Urology'
+          ]);
+          setAvailableDays([
+            'Sunday', 'Monday', 'Tuesday', 'Wednesday',
+            'Thursday', 'Friday', 'Saturday'
+          ]);
+          setPaymentMethods([
+            'Cash', 'Credit Card', 'Debit Card', 'Mobile Payment',
+            'Bank Transfer', 'Insurance'
+          ]);
+          setNepaliDistricts([
+            'Kathmandu', 'Pokhara', 'Lalitpur', 'Bhaktapur', 'Biratnagar', 'Birgunj',
+            'Dharan', 'Bharatpur', 'Janakpur', 'Butwal', 'Hetauda', 'Dhangadhi',
+            'Nepalgunj', 'Itahari', 'Tulsipur', 'Birendranagar', 'Ghorahi', 'Kalaiya'
+          ]);
+        }
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const countriesList = Object.values(countries).map(country => country.name);
 
@@ -145,7 +272,6 @@ export default function DoctorRegisterPage() {
     const newErrors: Record<string, string> = {};
     
     if (step === 0) {
-      // Personal Info Validation
       if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
       if (!formData.email.trim()) {
         newErrors.email = 'Email is required';
@@ -159,7 +285,6 @@ export default function DoctorRegisterPage() {
       if (!formData.gender) newErrors.gender = 'Gender is required';
       if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
     } else if (step === 1) {
-      // Professional Info Validation
       if (!formData.licenseNumber.trim()) newErrors.licenseNumber = 'License number is required';
       if (formData.specialization.length === 0) newErrors.specialization = 'At least one specialization is required';
       if (!formData.yearsOfExperience) newErrors.yearsOfExperience = 'Years of experience is required';
@@ -167,12 +292,10 @@ export default function DoctorRegisterPage() {
       if (!formData.qualifications) newErrors.qualifications = 'Qualifications are required';
       if (!formData.consultationFee) newErrors.consultationFee = 'Consultation fee is required';
     } else if (step === 2) {
-      // Address Info Validation
       if (!formData.address) newErrors.address = 'Address is required';
       if (!formData.city) newErrors.city = 'City is required';
       if (!formData.country) newErrors.country = 'Country is required';
     } else if (step === 3) {
-      // Document Validation
       if (!formData.citizenshipNumber) newErrors.citizenshipNumber = 'Citizenship number is required';
       if (!formData.citizenshipIssuedDistrict) newErrors.citizenshipIssuedDistrict = 'Issued district is required';
       if (!formData.licenseDocument) newErrors.licenseDocument = 'License document is required';
@@ -242,16 +365,24 @@ export default function DoctorRegisterPage() {
 
         try {
           // Simulate API call with form data
-          console.log('Submitting form:', formData);
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
+          const response = await fetch('http://localhost:5000/api/doctors', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+          });
+
+          if (!response.ok) {
+            throw new Error('Registration failed');
+          }
+
           setSnackbar({
             open: true,
             message: 'Doctor registration submitted for verification!',
             severity: 'success'
           });
           
-          // Redirect after a short delay
           setTimeout(() => {
             router.push('/dashboard');
           }, 2000);
@@ -286,12 +417,12 @@ export default function DoctorRegisterPage() {
   const muiTheme = createTheme({
     palette: {
       primary: {
-        main: "#2A7F62", // Medical green
+        main: "#2A7F62",
         light: "#E8F5E9",
         dark: "#1B5E20"
       },
       secondary: {
-        main: "#3A5E6D", // Medical blue
+        main: "#3A5E6D",
       },
       error: {
         main: "#D32F2F",
@@ -460,26 +591,25 @@ export default function DoctorRegisterPage() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-green-50">
         <div className="w-full max-w-4xl space-y-8">
           {/* Logo Header */}
-        <div className="flex flex-col items-center">
-  <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-    <img 
-      src="/images/logo.png" 
-      alt="MediPortal Logo"
-      className="h-20 w-80 object-contain" 
-    />
-  </Link>
-
-  <Typography 
-    variant="h4" 
-    className="font-bold text-center mt-[-20px]" // ❗ Negative margin to pull up text
-    sx={{
-      background: 'linear-gradient(90deg, #2A7F62, #3A5E6D)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      fontWeight: 700,
-      letterSpacing: '-0.5px',
-    }}
-  >
+          <div className="flex flex-col items-center">
+            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              <img 
+                src="/images/logo.png" 
+                alt="MediPortal Logo"
+                className="h-20 w-80 object-contain" 
+              />
+            </Link>
+            <Typography 
+              variant="h4" 
+              className="font-bold text-center mt-[-20px]"
+              sx={{
+                background: 'linear-gradient(90deg, #2A7F62, #3A5E6D)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 700,
+                letterSpacing: '-0.5px',
+              }}
+            >
               Doctor Registration
             </Typography>
             <Typography variant="subtitle1" className="text-gray-500 text-center mt-2">
@@ -1075,7 +1205,6 @@ export default function DoctorRegisterPage() {
                       />
                     </div>
 
-                    {/* Terms and Conditions */}
                     <Box className="mt-6">
                       <FormControlLabel
                         control={

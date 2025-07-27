@@ -1,491 +1,1062 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { 
-  Medication as Pill,
-  Add as Plus,
+  MedicalInformation as PillIcon,
+  Add as PlusIcon,
   Search as SearchIcon,
-  FilterAlt as Filter,
-  Warning as AlertTriangle,
-  Check as CheckIcon,
-  AccessTime as Clock,
+  FilterAlt as FilterIcon,
+  CalendarToday as CalendarIcon,
+  Person as UserIcon,
+  Warning as AlertIcon,
+  CheckCircle as CheckIcon,
+  AccessTime as ClockIcon,
   Edit as EditIcon,
-  Print as Printer,
-  Share as ShareIcon,
-  Refresh as RotateCcw,
-  Close as XIcon,
+  Print as PrintIcon,
+  QrCode as QrCodeIcon,
+  TrendingUp as StatsIcon,
+  Delete as DeleteIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
   Mic as MicIcon,
-  AttachMoney as DollarSign
+  Refresh as RenewIcon,
+  Share as ShareIcon,
+  AttachMoney as DollarIcon
 } from "@mui/icons-material";
-import Button from "@mui/material/Button";
-import Input from "@mui/material/Input";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardHeader from "@mui/material/CardHeader";
-import Badge from "@mui/material/Badge";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import { toast } from "sonner";
+import { 
+  Button, 
+  Card, 
+  CardHeader, 
+  CardContent, 
+  Select, 
+  MenuItem, 
+  SelectChangeEvent,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Typography,
+  Box,
+  Avatar,
+  Chip,
+  IconButton,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  Snackbar,
+  Alert,
+  Badge,
+  CircularProgress
+} from "@mui/material";
+import { v4 as uuidv4 } from 'uuid';
+
+interface Prescription {
+  id: string;
+  medication: string;
+  dosage: string;
+  form: string;
+  frequency: string;
+  startDate: string;
+  endDate: string;
+  prescribedBy: string;
+  pharmacy: string;
+  refillsLeft: number;
+  nextRefill: string;
+  status: "active" | "pending" | "completed" | "discontinued";
+  interactions: string[];
+  cost: string;
+  instructions: string;
+}
+
+interface PrescriptionHistory {
+  id: string;
+  medication: string;
+  dosage: string;
+  period: string;
+  reason: string;
+  status: "completed" | "discontinued";
+}
+
+interface DrugInteraction {
+  id: string;
+  drug1: string;
+  drug2: string;
+  severity: "low" | "medium" | "high";
+  description: string;
+}
 
 const Prescriptions = () => {
-  const [selectedPatient, setSelectedPatient] = useState("john-doe");
-  const [filterStatus, setFilterStatus] = useState("active");
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  // State for prescriptions data
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [prescriptionHistory, setPrescriptionHistory] = useState<PrescriptionHistory[]>([]);
+  const [drugInteractions, setDrugInteractions] = useState<DrugInteraction[]>([]);
 
+  // State for filters and search
+  const [selectedPatient, setSelectedPatient] = useState<string>("john-doe");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // State for form dialog
+  const [openDialog, setOpenDialog] = useState(false);
+  const [currentPrescription, setCurrentPrescription] = useState<Prescription | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // State for voice prescribing
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  // State for notifications
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "info">("success");
+
+  // Current patient data
   const currentPatient = {
     name: "John Doe",
     id: "#12345",
+    age: 45,
+    lastPrescription: "2 days ago",
     compliance: 92,
-    lastRefill: "2 days ago",
     pharmacy: "CVS Main St"
   };
 
-  const activePrescriptions = [
-    {
-      id: 1,
-      medication: "Metformin",
-      dosage: "500mg",
-      form: "tablet",
-      frequency: "BID (twice daily)",
-      startDate: "05/01/24",
-      status: "active",
-      pharmacy: "CVS Main St",
-      refillsLeft: 3,
-      nextRefill: "Nov 15, 2024",
-      interactions: [],
-      cost: "$15"
-    },
-    {
-      id: 2,
-      medication: "Lisinopril", 
-      dosage: "10mg",
-      form: "capsule",
-      frequency: "QD (once daily)",
-      startDate: "03/15/24",
-      status: "active",
-      pharmacy: "Walgreens #4251", 
-      refillsLeft: 5,
-      nextRefill: "Dec 01, 2024",
-      interactions: [],
-      cost: "$8"
-    },
-    {
-      id: 3,
-      medication: "Amoxicillin",
-      dosage: "500mg",
-      form: "capsule", 
-      frequency: "TID (three times daily)",
-      startDate: "10/15/24",
-      status: "pending",
-      pharmacy: "Not selected",
-      refillsLeft: 0,
-      nextRefill: "N/A",
-      interactions: ["Penicillin allergy warning"],
-      cost: "Pending"
-    }
-  ];
+  // Initialize with sample data
+  useEffect(() => {
+    const initialPrescriptions: Prescription[] = [
+      {
+        id: uuidv4(),
+        medication: "Metformin",
+        dosage: "500mg",
+        form: "tablet",
+        frequency: "Twice daily",
+        startDate: "2024-05-01",
+        endDate: "2024-11-01",
+        prescribedBy: "Dr. Smith",
+        pharmacy: "CVS Main St",
+        refillsLeft: 3,
+        nextRefill: "2024-11-15",
+        status: "active",
+        interactions: [],
+        cost: "$15",
+        instructions: "Take with meals"
+      },
+      {
+        id: uuidv4(),
+        medication: "Lisinopril",
+        dosage: "10mg",
+        form: "capsule",
+        frequency: "Once daily",
+        startDate: "2024-03-15",
+        endDate: "2024-09-15",
+        prescribedBy: "Dr. Johnson",
+        pharmacy: "Walgreens #4251",
+        refillsLeft: 5,
+        nextRefill: "2024-12-01",
+        status: "active",
+        interactions: [],
+        cost: "$8",
+        instructions: "Take in the morning"
+      },
+      {
+        id: uuidv4(),
+        medication: "Amoxicillin",
+        dosage: "500mg",
+        form: "capsule",
+        frequency: "Three times daily",
+        startDate: "2024-10-15",
+        endDate: "2024-10-22",
+        prescribedBy: "Dr. Patel",
+        pharmacy: "Not selected",
+        refillsLeft: 0,
+        nextRefill: "N/A",
+        status: "pending",
+        interactions: ["Penicillin allergy"],
+        cost: "Pending",
+        instructions: "Take until finished"
+      }
+    ];
 
-  const prescriptionHistory = [
-    {
-      medication: "Atorvastatin",
-      dosage: "20mg",
-      period: "Jan 2024 - Sep 2024",
-      reason: "Completed course",
-      status: "discontinued"
-    },
-    {
-      medication: "Ibuprofen", 
-      dosage: "400mg",
-      period: "Aug 2024 - Aug 2024",
-      reason: "Short-term use",
-      status: "completed"
-    }
-  ];
+    const initialHistory: PrescriptionHistory[] = [
+      {
+        id: uuidv4(),
+        medication: "Atorvastatin",
+        dosage: "20mg",
+        period: "Jan 2024 - Sep 2024",
+        reason: "Completed course",
+        status: "completed"
+      },
+      {
+        id: uuidv4(),
+        medication: "Ibuprofen",
+        dosage: "400mg",
+        period: "Aug 2024 - Aug 2024",
+        reason: "Short-term use",
+        status: "completed"
+      }
+    ];
 
-  const drugInteractions = [
-    {
-      drug1: "Warfarin",
-      drug2: "Aspirin", 
-      severity: "High",
-      description: "Increased bleeding risk"
-    }
-  ];
+    const initialInteractions: DrugInteraction[] = [
+      {
+        id: uuidv4(),
+        drug1: "Warfarin",
+        drug2: "Aspirin",
+        severity: "high",
+        description: "Increased bleeding risk"
+      }
+    ];
 
+    setPrescriptions(initialPrescriptions);
+    setPrescriptionHistory(initialHistory);
+    setDrugInteractions(initialInteractions);
+  }, []);
+
+  // Filter prescriptions based on selected filters and search term
+  const filteredPrescriptions = prescriptions.filter(prescription => {
+    const matchesStatus = filterStatus === "all" || prescription.status === filterStatus;
+    const matchesSearch = searchTerm === "" || 
+      prescription.medication.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      prescription.dosage.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return matchesStatus && matchesSearch;
+  });
+
+  const stats = {
+    active: prescriptions.filter(p => p.status === "active").length,
+    pending: prescriptions.filter(p => p.status === "pending").length,
+    history: prescriptionHistory.length,
+    compliance: currentPatient.compliance
+  };
+
+  // Status color mapping with medical-appropriate colors
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-[#388E3C] text-white";
+        return { bg: "#e8f5e9", text: "#2e7d32", border: "#c8e6c9" }; // Light green
       case "pending":
-        return "bg-[#FFC107] text-[#2D3748]";
-      case "expired":
-        return "bg-[#D32F2F] text-white";
+        return { bg: "#e3f2fd", text: "#1565c0", border: "#bbdefb" }; // Light blue
+      case "completed":
+        return { bg: "#f3e5f5", text: "#7b1fa2", border: "#e1bee7" }; // Light purple
       case "discontinued":
-        return "bg-[#E2E8F0] text-[#2D3748]";
+        return { bg: "#e0e0e0", text: "#424242", border: "#bdbdbd" }; // Light gray
       default:
-        return "bg-[#E2E8F0] text-[#2D3748]";
+        return { bg: "#f5f5f5", text: "#424242", border: "#e0e0e0" };
     }
   };
 
-  const handleAction = (action: string, prescriptionId?: number) => {
-    toast.success(`${action} ${prescriptionId ? `prescription #${prescriptionId}` : "completed"}`);
+  // CRUD Operations
+  const handleAddPrescription = () => {
+    setCurrentPrescription({
+      id: uuidv4(),
+      medication: "",
+      dosage: "",
+      form: "tablet",
+      frequency: "",
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: "",
+      prescribedBy: "",
+      pharmacy: "",
+      refillsLeft: 0,
+      nextRefill: "",
+      status: "active",
+      interactions: [],
+      cost: "",
+      instructions: ""
+    });
+    setIsEditing(false);
+    setOpenDialog(true);
+  };
+
+  const handleEditPrescription = (prescription: Prescription) => {
+    setCurrentPrescription(prescription);
+    setIsEditing(true);
+    setOpenDialog(true);
+  };
+
+  const handleDeletePrescription = (id: string) => {
+    setPrescriptions(prescriptions.filter(p => p.id !== id));
+    showNotification("Prescription deleted successfully", "success");
+  };
+
+  const handleSavePrescription = () => {
+    if (!currentPrescription) return;
+
+    if (isEditing) {
+      setPrescriptions(prescriptions.map(p => 
+        p.id === currentPrescription.id ? currentPrescription : p
+      ));
+      showNotification("Prescription updated successfully", "success");
+    } else {
+      setPrescriptions([...prescriptions, currentPrescription]);
+      showNotification("Prescription added successfully", "success");
+    }
+
+    setOpenDialog(false);
   };
 
   const handleVoicePrescribing = () => {
     setIsVoiceMode(!isVoiceMode);
     if (!isVoiceMode) {
-      toast.info("Voice prescribing activated. Say your prescription...");
-    } else {
-      toast.success("Voice prescription saved: Amoxicillin 500mg TID for 7 days");
+      showNotification("Voice prescribing activated. Say your prescription...", "info");
+      setIsListening(true);
+      // Simulate voice recognition after 3 seconds
+      setTimeout(() => {
+        setIsListening(false);
+        setCurrentPrescription({
+          id: uuidv4(),
+          medication: "Amoxicillin",
+          dosage: "500mg",
+          form: "capsule",
+          frequency: "Three times daily",
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          prescribedBy: "Dr. Smith",
+          pharmacy: "CVS Main St",
+          refillsLeft: 0,
+          nextRefill: "N/A",
+          status: "active",
+          interactions: [],
+          cost: "$10",
+          instructions: "Take until finished"
+        });
+        showNotification("Voice prescription captured", "success");
+        setOpenDialog(true);
+      }, 3000);
     }
   };
 
+  const showNotification = (message: string, severity: "success" | "error" | "info") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
+  // Filter handlers
+  const handlePatientChange = (event: SelectChangeEvent) => {
+    setSelectedPatient(event.target.value as string);
+  };
+
+  const handleFilterStatusChange = (event: SelectChangeEvent) => {
+    setFilterStatus(event.target.value as string);
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: '#f5faf7' }}>
       {/* Header */}
-      <div className="bg-[#3A5E6D] border-b border-[#E2E8F0]">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <Pill className="h-8 w-8 text-white" />
-              <h1 className="text-3xl font-bold text-white">Prescriptions</h1>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button
+      <Box sx={{ 
+        bgcolor: 'white', 
+        borderBottom: 1, 
+        borderColor: 'divider',
+        boxShadow: 1
+      }}>
+        <Box sx={{ maxWidth: '7xl', mx: 'auto', px: { xs: 2, sm: 3, lg: 4 }, py: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <PillIcon sx={{ color: '#2A7F62', fontSize: 32 }} />
+              <Typography variant="h4" component="h1" fontWeight="bold" color="#2A7F62">
+                Prescription Management
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button 
                 variant={isVoiceMode ? "contained" : "outlined"}
                 onClick={handleVoicePrescribing}
-                className={isVoiceMode ? "bg-[#D32F2F] hover:bg-[#B71C1C]" : "text-white border-white"}
-                startIcon={<MicIcon className={isVoiceMode ? "animate-pulse" : ""} />}
+                sx={{
+                  bgcolor: isVoiceMode ? '#2A7F62' : 'transparent',
+                  color: isVoiceMode ? 'white' : '#2A7F62',
+                  borderColor: '#2A7F62',
+                  '&:hover': { 
+                    bgcolor: isVoiceMode ? '#1e6b50' : '#2A7F6210',
+                    borderColor: '#1e6b50'
+                  }
+                }}
+                startIcon={
+                  isListening ? (
+                    <Badge overlap="circular" badgeContent={<CircularProgress size={12} color="inherit" />}>
+                      <MicIcon />
+                    </Badge>
+                  ) : (
+                    <MicIcon />
+                  )
+                }
               >
-                {isVoiceMode ? "Stop Recording" : "Voice Prescribe"}
+                {isVoiceMode ? "Recording..." : "Voice Prescribe"}
               </Button>
               <Button 
                 variant="contained" 
-                className="bg-[#2A7F62] hover:bg-[#1B5E20]"
-                startIcon={<Plus />}
+                startIcon={<PlusIcon />}
+                onClick={handleAddPrescription}
+                sx={{
+                  bgcolor: '#2A7F62',
+                  '&:hover': { bgcolor: '#1e6b50' }
+                }}
               >
                 New Prescription
               </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <Box sx={{ maxWidth: '7xl', mx: 'auto', px: { xs: 2, sm: 3, lg: 4 }, py: 4 }}>
+        <Box sx={{ display: 'grid', gap: 4, gridTemplateColumns: { lg: '3fr 1fr' } }}>
           {/* Main Content */}
-          <div className="lg:w-3/4">
+          <Box>
             {/* Patient Selector & Filters */}
-            <div className="bg-[#F5F9F8] rounded-lg border border-[#E2E8F0] p-4 mb-6">
-              <div className="flex flex-wrap gap-4 items-center">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-[#2D3748]">Patient:</span>
-                  <Select 
-                    value={selectedPatient} 
-                    onChange={(e) => setSelectedPatient(e.target.value)}
-                    className="w-48 bg-white"
-                  >
-                    <MenuItem value="john-doe">John Doe (#12345)</MenuItem>
-                    <MenuItem value="jane-roe">Jane Roe (#67890)</MenuItem>
-                  </Select>
-                </div>
+            <Card sx={{ mb: 3, boxShadow: 2 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2">Patient:</Typography>
+                    <Select
+                      value={selectedPatient}
+                      onChange={handlePatientChange}
+                      size="small"
+                      sx={{ minWidth: 180 }}
+                    >
+                      <MenuItem value="john-doe">John Doe (#12345)</MenuItem>
+                      <MenuItem value="jane-roe">Jane Roe (#67890)</MenuItem>
+                    </Select>
+                  </Box>
 
-                <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4 text-[#2D3748]" />
-                  <Select 
-                    value={filterStatus} 
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-32 bg-white"
-                  >
-                    <MenuItem value="active">Active</MenuItem>
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="all">All Status</MenuItem>
-                  </Select>
-                </div>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <FilterIcon fontSize="small" color="action" />
+                    <Select
+                      value={filterStatus}
+                      onChange={handleFilterStatusChange}
+                      size="small"
+                      sx={{ minWidth: 120 }}
+                    >
+                      <MenuItem value="all">All Status</MenuItem>
+                      <MenuItem value="active">Active</MenuItem>
+                      <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="completed">Completed</MenuItem>
+                      <MenuItem value="discontinued">Discontinued</MenuItem>
+                    </Select>
+                  </Box>
 
-                <div className="flex-1 max-w-md">
-                  <div className="relative">
-                    <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#2D3748]" />
-                    <Input 
-                      placeholder="Search medications..." 
-                      className="pl-10 w-full bg-white"
-                      disableUnderline
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+                  <TextField
+                    placeholder="Search medications..."
+                    variant="outlined"
+                    size="small"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ flex: 1, maxWidth: 500 }}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
 
-            {/* Current Medications Summary */}
-            <Card className="mb-6" sx={{ backgroundColor: '#F5F9F8' }}>
+            {/* Patient Summary */}
+            <Card sx={{ mb: 3, boxShadow: 2 }}>
               <CardHeader
                 title={
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#2D3748]">Current Medications ({activePrescriptions.filter(p => p.status === "active").length})</span>
-                    <div className="text-sm text-[#2D3748]">
-                      Patient compliance: <span className="text-[#388E3C] font-semibold">{currentPatient.compliance}%</span>
-                    </div>
-                  </div>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Avatar 
+                        sx={{ 
+                          width: 48, 
+                          height: 48, 
+                          bgcolor: '#2A7F62',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '1rem'
+                        }}
+                      >
+                        {currentPatient.name.split(' ').map(n => n[0]).join('')}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="h6" fontWeight="medium">
+                          {currentPatient.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {currentPatient.id} • Age: {currentPatient.age}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box textAlign="right">
+                      <Typography variant="body2" color="text.secondary">
+                        Medication Compliance
+                      </Typography>
+                      <Typography variant="h6" color="#2A7F62" fontWeight="medium">
+                        {stats.compliance}%
+                      </Typography>
+                    </Box>
+                  </Box>
                 }
               />
               <CardContent>
-                <div className="text-sm text-[#2D3748]">
-                  Last refill: {currentPatient.lastRefill} at {currentPatient.pharmacy}
-                </div>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <Typography variant="body2">
+                    <Box component="span" color="text.secondary">Last prescription:</Box>
+                    <Box component="span" ml={1} fontWeight="medium">{currentPatient.lastPrescription}</Box>
+                  </Typography>
+                  <Typography variant="body2">
+                    <Box component="span" color="text.secondary">Preferred pharmacy:</Box>
+                    <Box component="span" ml={1} fontWeight="medium">{currentPatient.pharmacy}</Box>
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
 
             {/* Prescriptions Table */}
-            <Card sx={{ backgroundColor: '#F5F9F8' }}>
-              <CardHeader title="Prescription Management" />
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-[#E2E8F0]">
-                        <th className="text-left py-3 px-2 font-medium text-[#2D3748]">Medication</th>
-                        <th className="text-left py-3 px-2 font-medium text-[#2D3748]">Dosage</th>
-                        <th className="text-left py-3 px-2 font-medium text-[#2D3748]">Frequency</th>
-                        <th className="text-left py-3 px-2 font-medium text-[#2D3748]">Status</th>
-                        <th className="text-left py-3 px-2 font-medium text-[#2D3748]">Pharmacy</th>
-                        <th className="text-left py-3 px-2 font-medium text-[#2D3748]">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activePrescriptions.map((prescription) => (
-                        <tr key={prescription.id} className="border-b border-[#E2E8F0] hover:bg-[#E2E8F0]/50">
-                          <td className="py-4 px-2">
-                            <div>
-                              <div className="font-medium text-[#2D3748]">{prescription.medication}</div>
-                              <div className="text-sm text-[#2D3748]">
-                                Started: {prescription.startDate}
-                              </div>
+            <Card sx={{ boxShadow: 2 }}>
+              <CardHeader 
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <PillIcon sx={{ color: '#2A7F62' }} />
+                    <Typography variant="h6">Active Prescriptions</Typography>
+                    <Box sx={{ flex: 1 }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {filteredPrescriptions.length} records found
+                    </Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ p: 0 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: '#e8f5e9' }}>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Medication</TableCell>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Dosage</TableCell>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Frequency</TableCell>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredPrescriptions.map((prescription) => {
+                      const statusColor = getStatusColor(prescription.status);
+                      return (
+                        <TableRow 
+                          key={prescription.id} 
+                          hover
+                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                        >
+                          <TableCell>
+                            <Box>
+                              <Typography fontWeight="medium">{prescription.medication}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {prescription.form} • {prescription.dosage}
+                              </Typography>
                               {prescription.interactions.length > 0 && (
-                                <div className="flex items-center space-x-1 mt-1">
-                                  <AlertTriangle className="h-3 w-3 text-[#D32F2F]" />
-                                  <span className="text-xs text-[#D32F2F]">Allergy Warning</span>
-                                </div>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                  <AlertIcon fontSize="small" color="error" />
+                                  <Typography variant="caption" color="error">
+                                    {prescription.interactions.join(", ")}
+                                  </Typography>
+                                </Box>
                               )}
-                            </div>
-                          </td>
-                          <td className="py-4 px-2">
-                            <span className="font-medium text-[#2D3748]">{prescription.dosage}</span>
-                            <div className="text-sm text-[#2D3748]">{prescription.form}</div>
-                          </td>
-                          <td className="py-4 px-2">
-                            <span className="text-[#2D3748]">{prescription.frequency}</span>
-                          </td>
-                          <td className="py-4 px-2">
-                            <Badge 
-                              className={`${getStatusColor(prescription.status)} px-2 py-1 rounded-full text-xs`}
-                            >
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Typography fontWeight="medium">{prescription.dosage}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {prescription.form}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography>{prescription.frequency}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {prescription.instructions}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center',
+                              px: 1.5,
+                              py: 0.5,
+                              borderRadius: 1,
+                              bgcolor: statusColor.bg,
+                              color: statusColor.text,
+                              border: `1px solid ${statusColor.border}`
+                            }}>
+                              {prescription.status === "active" && <CheckIcon fontSize="small" sx={{ mr: 0.5 }} />}
+                              {prescription.status === "pending" && <ClockIcon fontSize="small" sx={{ mr: 0.5 }} />}
                               {prescription.status.charAt(0).toUpperCase() + prescription.status.slice(1)}
-                            </Badge>
-                            {prescription.status === "active" && (
-                              <div className="text-xs text-[#2D3748] mt-1">
-                                Refills: {prescription.refillsLeft}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-4 px-2">
-                            <div className="text-[#2D3748]">{prescription.pharmacy}</div>
-                            {prescription.cost !== "Pending" && (
-                              <div className="text-sm text-[#2D3748] flex items-center">
-                                <DollarSign className="h-3 w-3 mr-1" />
-                                {prescription.cost} copay
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-4 px-2">
-                            <div className="flex items-center space-x-1">
-                              <Button
-                                size="small"
-                                variant="text"
-                                onClick={() => handleAction("Edit", prescription.id)}
-                                startIcon={<EditIcon />}
-                              />
-                              <Button
-                                size="small"
-                                variant="text"
-                                onClick={() => handleAction("Print", prescription.id)}
-                                startIcon={<Printer />}
-                              />
                               {prescription.status === "active" && (
-                                <Button
-                                  size="small"
-                                  variant="text"
-                                  onClick={() => handleAction("Renew", prescription.id)}
-                                  startIcon={<RotateCcw />}
-                                />
+                                <Typography variant="caption" sx={{ ml: 1 }}>
+                                  Refills: {prescription.refillsLeft}
+                                </Typography>
                               )}
-                              <Button
+                            </Box>
+                            {prescription.status === "active" && (
+                              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                                Next refill: {prescription.nextRefill}
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              <IconButton
+                                onClick={() => handleEditPrescription(prescription)}
                                 size="small"
-                                variant="text"
-                                onClick={() => handleAction("Send to Pharmacy", prescription.id)}
-                                startIcon={<ShareIcon />}
-                              />
-                              <Button
+                                sx={{ color: '#2196f3' }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                onClick={() => handleDeletePrescription(prescription.id)}
                                 size="small"
-                                variant="text"
-                                onClick={() => handleAction("Discontinue", prescription.id)}
-                                startIcon={<XIcon />}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                                sx={{ color: '#f44336' }}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                              {prescription.status === "active" && (
+                                <IconButton
+                                  onClick={() => showNotification(`Renewed ${prescription.medication}`, "success")}
+                                  size="small"
+                                  sx={{ color: '#2A7F62' }}
+                                >
+                                  <RenewIcon fontSize="small" />
+                                </IconButton>
+                              )}
+                              <IconButton
+                                onClick={() => showNotification(`Sent ${prescription.medication} to pharmacy`, "success")}
+                                size="small"
+                                sx={{ color: '#2A7F62' }}
+                              >
+                                <ShareIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
 
             {/* Prescription History */}
-            <Card className="mt-6" sx={{ backgroundColor: '#F5F9F8' }}>
-              <CardHeader title="Prescription History" />
+            <Card sx={{ mt: 3, boxShadow: 2 }}>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <CheckIcon sx={{ color: '#2A7F62' }} />
+                    <Typography variant="h6">Prescription History</Typography>
+                  </Box>
+                }
+              />
               <CardContent>
-                <div className="space-y-3">
-                  {prescriptionHistory.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-[#E2E8F0] rounded-lg">
-                      <div>
-                        <div className="font-medium text-[#2D3748]">
-                          {item.medication} {item.dosage}
-                        </div>
-                        <div className="text-sm text-[#2D3748]">
-                          {item.period} • {item.reason}
-                        </div>
-                      </div>
-                      <Badge 
-  variant="standard"
-  sx={{
-    border: '1px solid #2D3748',
-    color: '#2D3748',
-    backgroundColor: 'transparent',
-    padding: '0.25rem 0.5rem',
-    borderRadius: '4px'
-  }}
->
-  {item.status}
-</Badge>
-                    </div>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {prescriptionHistory.map((item) => (
+                    <Box 
+                      key={item.id}
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between', 
+                        p: 2, 
+                        bgcolor: '#f3e5f5', 
+                        borderRadius: 1,
+                        border: '1px solid #e1bee7'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ 
+                          width: 32, 
+                          height: 32, 
+                          bgcolor: '#7b1fa2', 
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <CheckIcon sx={{ color: 'white', fontSize: 16 }} />
+                        </Box>
+                        <Box>
+                          <Typography fontWeight="medium">{item.medication} {item.dosage}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {item.period} • {item.reason}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Chip 
+                        label={item.status.charAt(0).toUpperCase() + item.status.slice(1)} 
+                        sx={{ 
+                          bgcolor: '#e1bee7', 
+                          color: '#7b1fa2',
+                          border: '1px solid #ce93d8'
+                        }}
+                        size="small"
+                      />
+                    </Box>
                   ))}
-                </div>
+                </Box>
               </CardContent>
             </Card>
-          </div>
+          </Box>
 
           {/* Sidebar */}
-          <div className="lg:w-1/4 space-y-6">
-            {/* AI Dose Optimizer */}
-            <Card sx={{ backgroundColor: '#F5F9F8' }}>
-              <CardHeader title="AI Insights" />
-              <CardContent className="space-y-3">
-                <div className="p-3 bg-[#388E3C]/10 rounded-lg border border-[#388E3C]/20">
-                  <div className="text-sm font-medium text-[#388E3C]">💡 Dose Suggestion</div>
-                  <div className="text-xs text-[#2D3748] mt-1">
-                    Based on renal function, consider reducing Metformin to 250mg
-                  </div>
-                </div>
-                <div className="p-3 bg-[#FFC107]/20 rounded-lg border border-[#FFC107]/30">
-                  <div className="text-sm font-medium text-[#FF8F00]">
-                    🔄 Medication Timeline
-                  </div>
-                  <div className="text-xs text-[#2D3748] mt-1">
-                    Patient usually books follow-ups every 3 months
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Insurance Coverage */}
-            <Card sx={{ backgroundColor: '#F5F9F8' }}>
-              <CardHeader title="Insurance Coverage" />
-              <CardContent className="space-y-3">
-                <div className="text-center">
-                  <div className="text-sm text-[#2D3748]">Current Plan</div>
-                  <div className="font-semibold text-[#2D3748]">Blue Cross Premium</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#2D3748]">Metformin</span>
-                    <span className="text-[#388E3C]">Tier 1 - $15</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#2D3748]">Lisinopril</span>
-                    <span className="text-[#388E3C]">Tier 1 - $8</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#2D3748]">Amoxicillin</span>
-                    <span className="text-[#FF8F00]">Tier 2 - Auth Req.</span>
-                  </div>
-                </div>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Prescription Stats */}
+            <Card sx={{ boxShadow: 2 }}>
+              <CardHeader 
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <StatsIcon sx={{ color: '#2A7F62' }} />
+                    <Typography variant="h6">Prescription Summary</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box textAlign="center">
+                  <Typography variant="h3" color="#2A7F62" fontWeight="bold">
+                    {stats.active}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mt={1}>
+                    Active Prescriptions
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: '#e3f2fd', 
+                    borderRadius: 1,
+                    border: '1px solid #bbdefb',
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="h5" color="#1565c0" fontWeight="bold">
+                      {stats.pending}
+                    </Typography>
+                    <Typography variant="caption" color="#1565c0">
+                      Pending
+                    </Typography>
+                  </Box>
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: '#f3e5f5', 
+                    borderRadius: 1,
+                    border: '1px solid #e1bee7',
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="h5" color="#7b1fa2" fontWeight="bold">
+                      {stats.history}
+                    </Typography>
+                    <Typography variant="caption" color="#7b1fa2">
+                      Past Medications
+                    </Typography>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
 
             {/* Drug Interactions */}
-            <Card sx={{ backgroundColor: '#F5F9F8' }}>
-              <CardHeader 
+            <Card sx={{ boxShadow: 2 }}>
+              <CardHeader
                 title={
-                  <span className="text-[#D32F2F]">Safety Alerts</span>
-                } 
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <AlertIcon color="warning" />
+                    <Typography variant="h6" color="#ff9800">
+                      Safety Alerts
+                    </Typography>
+                  </Box>
+                }
               />
-              <CardContent className="space-y-3">
-                <div className="p-3 bg-[#D32F2F]/10 rounded-lg border border-[#D32F2F]/20">
-                  <div className="flex items-start space-x-2">
-                    <AlertTriangle className="h-4 w-4 text-[#D32F2F] mt-0.5" />
-                    <div>
-                      <div className="text-sm font-medium text-[#D32F2F]">Allergy Alert</div>
-                      <div className="text-xs text-[#2D3748]">
-                        Patient allergic to Penicillin - Amoxicillin contraindicated
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-3 bg-[#388E3C]/10 rounded-lg border border-[#388E3C]/20">
-                  <div className="flex items-start space-x-2">
-                    <CheckIcon className="h-4 w-4 text-[#388E3C] mt-0.5" />
-                    <div>
-                      <div className="text-sm font-medium text-[#388E3C]">No Interactions</div>
-                      <div className="text-xs text-[#2D3748]">
-                        Current medications are safe together
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {drugInteractions.length > 0 ? (
+                  drugInteractions.map((interaction) => {
+                    const severityColor = interaction.severity === "high" ? 
+                      { bg: "#ffebee", text: "#c62828", border: "#ffcdd2" } :
+                      interaction.severity === "medium" ? 
+                      { bg: "#fff8e1", text: "#ff8f00", border: "#ffecb3" } :
+                      { bg: "#e8f5e9", text: "#2e7d32", border: "#c8e6c9" };
+
+                    return (
+                      <Box 
+                        key={interaction.id}
+                        sx={{ 
+                          p: 2, 
+                          bgcolor: severityColor.bg, 
+                          borderRadius: 1,
+                          border: `1px solid ${severityColor.border}`
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Typography fontWeight="medium" color={severityColor.text}>
+                            {interaction.drug1} + {interaction.drug2}
+                          </Typography>
+                          <Box sx={{ 
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            bgcolor: severityColor.bg,
+                            color: severityColor.text,
+                            border: `1px solid ${severityColor.border}`,
+                            fontSize: '0.75rem'
+                          }}>
+                            {interaction.severity.toUpperCase()}
+                          </Box>
+                        </Box>
+                        <Typography variant="body2" color={severityColor.text}>
+                          {interaction.description}
+                        </Typography>
+                      </Box>
+                    );
+                  })
+                ) : (
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: '#e8f5e9', 
+                    borderRadius: 1,
+                    border: '1px solid #c8e6c9',
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="body2" color="#2e7d32">
+                      No significant drug interactions detected
+                    </Typography>
+                  </Box>
+                )}
               </CardContent>
             </Card>
 
             {/* Quick Actions */}
-            <Card sx={{ backgroundColor: '#F5F9F8' }}>
+            <Card sx={{ boxShadow: 2 }}>
               <CardHeader title="Quick Actions" />
-              <CardContent className="space-y-3">
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Button 
                   variant="outlined" 
                   fullWidth 
-                  onClick={() => handleAction("Generate Report")}
-                  className="text-[#2D3748] border-[#2D3748]"
+                  onClick={() => window.print()}
+                  startIcon={<PrintIcon />}
+                  sx={{ 
+                    color: '#2A7F62', 
+                    borderColor: '#2A7F62',
+                    '&:hover': {
+                      borderColor: '#1e6b50',
+                      backgroundColor: '#2A7F6210'
+                    }
+                  }}
                 >
-                  📊 Medication Report
+                  Print Medication List
                 </Button>
                 <Button 
                   variant="outlined" 
                   fullWidth 
-                  onClick={() => handleAction("Send to Patient")}
-                  className="text-[#2D3748] border-[#2D3748]"
+                  onClick={() => showNotification("QR code generated for medication list", "success")}
+                  startIcon={<QrCodeIcon />}
+                  sx={{ 
+                    color: '#2A7F62', 
+                    borderColor: '#2A7F62',
+                    '&:hover': {
+                      borderColor: '#1e6b50',
+                      backgroundColor: '#2A7F6210'
+                    }
+                  }}
                 >
-                  📱 Send to Patient App
+                  Share QR Code
                 </Button>
                 <Button 
-                  variant="outlined" 
+                  variant="contained" 
                   fullWidth 
-                  onClick={() => handleAction("Schedule Follow-up")}
-                  className="text-[#2D3748] border-[#2D3748]"
+                  onClick={handleAddPrescription}
+                  startIcon={<PlusIcon />}
+                  sx={{ 
+                    bgcolor: '#2A7F62', 
+                    '&:hover': { bgcolor: '#1e6b50' }
+                  }}
                 >
-                  📅 Schedule Follow-up
+                  New Prescription
                 </Button>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </div>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Add/Edit Prescription Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{isEditing ? "Edit Prescription" : "Add New Prescription"}</DialogTitle>
+        <DialogContent>
+          {currentPrescription && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+              <TextField
+                label="Medication Name"
+                value={currentPrescription.medication}
+                onChange={(e) => setCurrentPrescription({...currentPrescription, medication: e.target.value})}
+                fullWidth
+                margin="normal"
+                required
+              />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="Dosage"
+                  value={currentPrescription.dosage}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, dosage: e.target.value})}
+                  fullWidth
+                  margin="normal"
+                  required
+                />
+                <Select
+                  value={currentPrescription.form}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, form: e.target.value as string})}
+                  fullWidth
+                  margin="dense"
+                >
+                  <MenuItem value="tablet">Tablet</MenuItem>
+                  <MenuItem value="capsule">Capsule</MenuItem>
+                  <MenuItem value="liquid">Liquid</MenuItem>
+                  <MenuItem value="injection">Injection</MenuItem>
+                  <MenuItem value="cream">Cream</MenuItem>
+                </Select>
+              </Box>
+              <TextField
+                label="Frequency"
+                value={currentPrescription.frequency}
+                onChange={(e) => setCurrentPrescription({...currentPrescription, frequency: e.target.value})}
+                fullWidth
+                margin="normal"
+                required
+              />
+              <TextField
+                label="Instructions"
+                value={currentPrescription.instructions}
+                onChange={(e) => setCurrentPrescription({...currentPrescription, instructions: e.target.value})}
+                fullWidth
+                margin="normal"
+                multiline
+                rows={2}
+              />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="Start Date"
+                  type="date"
+                  value={currentPrescription.startDate}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, startDate: e.target.value})}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                  required
+                />
+                <TextField
+                  label="End Date"
+                  type="date"
+                  value={currentPrescription.endDate}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, endDate: e.target.value})}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="Prescribed By"
+                  value={currentPrescription.prescribedBy}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, prescribedBy: e.target.value})}
+                  fullWidth
+                  margin="normal"
+                />
+                <TextField
+                  label="Pharmacy"
+                  value={currentPrescription.pharmacy}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, pharmacy: e.target.value})}
+                  fullWidth
+                  margin="normal"
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="Refills Left"
+                  type="number"
+                  value={currentPrescription.refillsLeft}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, refillsLeft: parseInt(e.target.value) || 0})}
+                  fullWidth
+                  margin="normal"
+                />
+                <TextField
+                  label="Next Refill Date"
+                  type="date"
+                  value={currentPrescription.nextRefill}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, nextRefill: e.target.value})}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Select
+                  value={currentPrescription.status}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, status: e.target.value as any})}
+                  fullWidth
+                  margin="dense"
+                >
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="pending">Pending</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                  <MenuItem value="discontinued">Discontinued</MenuItem>
+                </Select>
+                <TextField
+                  label="Cost"
+                  value={currentPrescription.cost}
+                  onChange={(e) => setCurrentPrescription({...currentPrescription, cost: e.target.value})}
+                  fullWidth
+                  margin="normal"
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setOpenDialog(false)}
+            startIcon={<CancelIcon />}
+            sx={{ color: '#f44336' }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSavePrescription}
+            startIcon={<SaveIcon />}
+            sx={{ 
+              color: '#2A7F62',
+              '&:hover': {
+                backgroundColor: '#2A7F6210'
+              }
+            }}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

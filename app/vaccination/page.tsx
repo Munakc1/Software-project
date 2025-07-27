@@ -1,278 +1,939 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from "react";
 import { 
-  Box, 
-  Typography, 
+  Shield as ShieldIcon, 
+  Add as PlusIcon, 
+  Search as SearchIcon, 
+  FilterAlt as FilterIcon,
+  CalendarToday as CalendarDaysIcon,
+  Person as UserIcon,
+  Warning as AlertTriangleIcon,
+  CheckCircle as CheckCircleIcon,
+  AccessTime as ClockIcon,
+  Edit as EditIcon,
+  Print as PrinterIcon,
+  QrCode as QrCodeIcon,
+  TrendingUp as TrendingUpIcon,
+  Delete as DeleteIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon
+} from "@mui/icons-material";
+import { 
   Button, 
   Card, 
+  CardHeader, 
   CardContent, 
-  Divider, 
-  TextField, 
+  Select, 
   MenuItem, 
-  Tabs, 
-  Tab,
-  Chip
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+  SelectChangeEvent,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Typography,
+  Box,
+  Avatar,
+  Chip,
+  IconButton,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  Snackbar,
+  Alert
+} from "@mui/material";
+import { v4 as uuidv4 } from 'uuid';
 
-type Vaccine = {
+interface Vaccination {
   id: string;
-  name: string;
-  type: 'COVID-19' | 'Childhood' | 'Travel' | 'Other';
-  date: Date;
-  provider: string;
-  nextDose?: Date;
-};
+  vaccine: string;
+  manufacturer: string;
+  lotNumber: string;
+  dateGiven: string;
+  nextDue: string;
+  administeredBy: string;
+  location: string;
+  status: "completed" | "due" | "overdue" | "scheduled";
+  reactions: string;
+  certificate: boolean;
+}
 
-export default function VaccinesPage() {
-  const [activeTab, setActiveTab] = useState<'all' | 'covid' | 'childhood' | 'travel'>('all');
-  const [newVaccine, setNewVaccine] = useState<Partial<Vaccine>>({
-    name: '',
-    type: 'Other',
-    date: new Date(),
-    provider: '',
-  });
+interface VaccinationHistory {
+  id: string;
+  vaccine: string;
+  series: string;
+  lastDate: string;
+  status: string;
+}
 
-  const vaccines: Vaccine[] = [
-    {
-      id: '1',
-      name: 'HPV Vaccine',
-      type: 'Childhood',
-      date: new Date('2024-05-05'),
-      provider: 'City Health Clinic'
-    },
-    {
-      id: '2',
-      name: 'COVID-19 Vaccine (Booster)',
-      type: 'COVID-19',
-      date: new Date('2024-01-10'),
-      provider: 'Regional Hospital'
-    },
-    {
-      id: '3',
-      name: 'MMR Vaccine',
-      type: 'Childhood',
-      date: new Date('2023-04-03'),
-      provider: 'Pediatric Center'
-    },
-    {
-      id: '4',
-      name: 'Hepatitis A Vaccine',
-      type: 'Travel',
-      date: new Date('2022-07-13'),
-      provider: 'Travel Medicine Clinic',
-      nextDose: new Date('2024-07-13')
-    }
-  ];
+interface UpcomingVaccination {
+  id: string;
+  vaccine: string;
+  dueDate: string;
+  priority: "high" | "medium" | "low";
+  reason: string;
+}
 
-  const filteredVaccines = vaccines.filter(vaccine => {
-    if (activeTab === 'all') return true;
-    return vaccine.type.toLowerCase() === activeTab;
-  });
+const Vaccinations = () => {
+  // State for vaccinations data
+  const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
+  const [vaccinationHistory, setVaccinationHistory] = useState<VaccinationHistory[]>([]);
+  const [upcomingVaccinations, setUpcomingVaccinations] = useState<UpcomingVaccination[]>([]);
 
-  const handleInputChange = (field: keyof Vaccine, value: any) => {
-    setNewVaccine(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  // State for filters and search
+  const [selectedPatient, setSelectedPatient] = useState<string>("john-doe");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // State for form dialog
+  const [openDialog, setOpenDialog] = useState(false);
+  const [currentVaccination, setCurrentVaccination] = useState<Vaccination | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // State for notifications
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+
+  // Current patient data
+  const currentPatient = {
+    name: "John Doe",
+    id: "#12345",
+    age: 45,
+    lastVaccination: "6 months ago",
+    upcomingDue: "Annual Flu Shot",
+    compliance: 95
   };
 
-  const handleAddVaccine = () => {
-    // In a real app, you would save to a database here
-    console.log('Adding vaccine:', newVaccine);
-    // Reset form
-    setNewVaccine({
-      name: '',
-      type: 'Other',
-      date: new Date(),
-      provider: '',
+  // Initialize with sample data
+  useEffect(() => {
+    const initialVaccinations: Vaccination[] = [
+      {
+        id: uuidv4(),
+        vaccine: "COVID-19 Booster",
+        manufacturer: "Pfizer-BioNTech",
+        lotNumber: "FF2589",
+        dateGiven: "2024-10-15",
+        nextDue: "2025-04-15",
+        administeredBy: "Dr. Smith",
+        location: "Main Clinic",
+        status: "completed",
+        reactions: "None reported",
+        certificate: true
+      },
+      {
+        id: uuidv4(),
+        vaccine: "Influenza (Flu)",
+        manufacturer: "Sanofi Pasteur",
+        lotNumber: "FLU2024-A",
+        dateGiven: "2024-09-20",
+        nextDue: "2025-09-20",
+        administeredBy: "Nurse Johnson",
+        location: "Main Clinic",
+        status: "completed",
+        reactions: "Mild soreness at injection site",
+        certificate: true
+      },
+      {
+        id: uuidv4(),
+        vaccine: "Tetanus-Diphtheria",
+        manufacturer: "GlaxoSmithKline",
+        lotNumber: "TD2024-B",
+        dateGiven: "2023-08-10",
+        nextDue: "2033-08-10",
+        administeredBy: "Dr. Patel",
+        location: "Main Clinic",
+        status: "completed",
+        reactions: "None reported",
+        certificate: true
+      },
+      {
+        id: uuidv4(),
+        vaccine: "Hepatitis B",
+        manufacturer: "Merck",
+        lotNumber: "HEP2024-C",
+        dateGiven: "N/A",
+        nextDue: "2024-12-01",
+        administeredBy: "N/A",
+        location: "N/A",
+        status: "due",
+        reactions: "N/A",
+        certificate: false
+      }
+    ];
+
+    const initialHistory: VaccinationHistory[] = [
+      {
+        id: uuidv4(),
+        vaccine: "MMR (Measles, Mumps, Rubella)",
+        series: "Complete (2 doses)",
+        lastDate: "1995-06-15",
+        status: "protected"
+      },
+      {
+        id: uuidv4(),
+        vaccine: "Polio",
+        series: "Complete (4 doses)",
+        lastDate: "1985-04-20",
+        status: "protected"
+      },
+      {
+        id: uuidv4(),
+        vaccine: "Varicella (Chickenpox)",
+        series: "Complete (2 doses)",
+        lastDate: "2010-03-12",
+        status: "protected"
+      }
+    ];
+
+    const initialUpcoming: UpcomingVaccination[] = [
+      {
+        id: uuidv4(),
+        vaccine: "Hepatitis B",
+        dueDate: "2024-12-01",
+        priority: "high",
+        reason: "Travel requirement"
+      },
+      {
+        id: uuidv4(),
+        vaccine: "Pneumococcal",
+        dueDate: "2025-01-15",
+        priority: "medium",
+        reason: "Age-based recommendation"
+      }
+    ];
+
+    setVaccinations(initialVaccinations);
+    setVaccinationHistory(initialHistory);
+    setUpcomingVaccinations(initialUpcoming);
+  }, []);
+
+  // Filter vaccinations based on selected filters and search term
+  const filteredVaccinations = vaccinations.filter(vaccination => {
+    const matchesType = filterType === "all" || 
+      (filterType === "covid" && vaccination.vaccine.includes("COVID")) ||
+      (filterType === "flu" && vaccination.vaccine.includes("Influenza")) ||
+      (filterType === "routine" && !vaccination.vaccine.includes("COVID") && !vaccination.vaccine.includes("Influenza"));
+
+    const matchesStatus = filterStatus === "all" || vaccination.status === filterStatus;
+
+    const matchesSearch = searchTerm === "" || 
+      vaccination.vaccine.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vaccination.lotNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vaccination.dateGiven.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return matchesType && matchesStatus && matchesSearch;
+  });
+
+  const stats = {
+    total: vaccinations.filter(v => v.status === "completed").length,
+    due: vaccinations.filter(v => v.status === "due").length,
+    protected: vaccinationHistory.length,
+    compliance: currentPatient.compliance
+  };
+
+  // Status color mapping with light green variations
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return { bg: "#e8f5e9", text: "#2e7d32", border: "#c8e6c9" }; // Light green
+      case "due":
+        return { bg: "#fff8e1", text: "#ff8f00", border: "#ffecb3" }; // Light amber
+      case "overdue":
+        return { bg: "#ffebee", text: "#c62828", border: "#ffcdd2" }; // Light red
+      case "scheduled":
+        return { bg: "#e3f2fd", text: "#1565c0", border: "#bbdefb" }; // Light blue
+      default:
+        return { bg: "#f5f5f5", text: "#424242", border: "#e0e0e0" };
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return { bg: "#ffebee", text: "#c62828", border: "#ffcdd2" };
+      case "medium":
+        return { bg: "#fff8e1", text: "#ff8f00", border: "#ffecb3" };
+      case "low":
+        return { bg: "#e8f5e9", text: "#2e7d32", border: "#c8e6c9" };
+      default:
+        return { bg: "#f5f5f5", text: "#424242", border: "#e0e0e0" };
+    }
+  };
+
+  // CRUD Operations
+  const handleAddVaccination = () => {
+    setCurrentVaccination({
+      id: uuidv4(),
+      vaccine: "",
+      manufacturer: "",
+      lotNumber: "",
+      dateGiven: "",
+      nextDue: "",
+      administeredBy: "",
+      location: "",
+      status: "scheduled",
+      reactions: "None reported",
+      certificate: false
     });
+    setIsEditing(false);
+    setOpenDialog(true);
+  };
+
+  const handleEditVaccination = (vaccination: Vaccination) => {
+    setCurrentVaccination(vaccination);
+    setIsEditing(true);
+    setOpenDialog(true);
+  };
+
+  const handleDeleteVaccination = (id: string) => {
+    setVaccinations(vaccinations.filter(v => v.id !== id));
+    showNotification("Vaccination deleted successfully", "success");
+  };
+
+  const handleSaveVaccination = () => {
+    if (!currentVaccination) return;
+
+    if (isEditing) {
+      setVaccinations(vaccinations.map(v => 
+        v.id === currentVaccination.id ? currentVaccination : v
+      ));
+      showNotification("Vaccination updated successfully", "success");
+    } else {
+      setVaccinations([...vaccinations, currentVaccination]);
+      showNotification("Vaccination added successfully", "success");
+    }
+
+    setOpenDialog(false);
+  };
+
+  const showNotification = (message: string, severity: "success" | "error") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
+  // Filter handlers
+  const handlePatientChange = (event: SelectChangeEvent) => {
+    setSelectedPatient(event.target.value as string);
+  };
+
+  const handleFilterTypeChange = (event: SelectChangeEvent) => {
+    setFilterType(event.target.value as string);
+  };
+
+  const handleFilterStatusChange = (event: SelectChangeEvent) => {
+    setFilterStatus(event.target.value as string);
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <div className="min-h-screen bg-white">
-        {/* Header */}
-        <header className="bg-[#3A5E6D] text-white p-4">
-          <Typography variant="h4">Vaccine Tracker</Typography>
-        </header>
-
-        <main className="container mx-auto p-4">
-          {/* Stats Section */}
-          <section className="mb-8">
-            <Card className="bg-[#F5F9F8] shadow-none">
-              <CardContent>
-                <div className="flex flex-col md:flex-row items-center justify-between">
-                  <div className="mb-4 md:mb-0">
-                    <Typography variant="h3" className="text-[#2A7F62] font-bold">72%</Typography>
-                    <Typography variant="h6" className="text-[#2D3748]">Protected</Typography>
-                  </div>
-                  <div className="text-center md:text-right">
-                    <Typography variant="subtitle1" className="text-[#2D3748]">
-                      Upcoming Vaccines &gt;
-                    </Typography>
-                    <Typography variant="body1" className="text-[#2D3748]">
-                      Due dates: May 15, 2024
-                    </Typography>
-                    <Chip 
-                      label="Outbreak Alert" 
-                      className="mt-2 bg-[#D32F2F] text-white" 
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Add New Vaccine Section */}
-          <section className="mb-8">
-            <Typography variant="h5" className="text-[#2D3748] mb-4">
-              Add New Vaccine
-            </Typography>
-            <Card className="bg-[#F5F9F8] shadow-none">
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button 
-                      variant="outlined" 
-                      fullWidth 
-                      className="border-[#E2E8F0] text-[#2D3748]"
-                    >
-                      Scan QR Code
-                    </Button>
-                    <TextField
-                      label="Name"
-                      fullWidth
-                      value={newVaccine.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      className="bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <TextField
-                      select
-                      label="Type"
-                      fullWidth
-                      value={newVaccine.type}
-                      onChange={(e) => handleInputChange('type', e.target.value)}
-                      className="bg-white"
-                    >
-                      <MenuItem value="COVID-19">COVID-19</MenuItem>
-                      <MenuItem value="Childhood">Childhood</MenuItem>
-                      <MenuItem value="Travel">Travel</MenuItem>
-                      <MenuItem value="Other">Other</MenuItem>
-                    </TextField>
-                    <DatePicker
-                      label="Date"
-                      value={newVaccine.date}
-                      onChange={(date) => handleInputChange('date', date)}
-                      className="w-full bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <TextField
-                      label="Provider"
-                      fullWidth
-                      value={newVaccine.provider}
-                      onChange={(e) => handleInputChange('provider', e.target.value)}
-                      className="bg-white"
-                    />
-                    <DatePicker
-                      label="Next Dose (optional)"
-                      value={newVaccine.nextDose || null}
-                      onChange={(date) => handleInputChange('nextDose', date)}
-                      className="w-full bg-white"
-                    />
-                  </div>
-                  <Button 
-                    variant="contained" 
-                    className="bg-[#2A7F62] hover:bg-[#388E3C] text-white"
-                    onClick={handleAddVaccine}
-                  >
-                    Add Vaccine
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* History Section */}
-          <section className="mb-8">
-            <Typography variant="h5" className="text-[#2D3748] mb-4">
-              History
-            </Typography>
-            <Tabs 
-              value={activeTab}
-              onChange={(_, newValue) => setActiveTab(newValue)}
-              className="border-b border-[#E2E8F0]"
+    <div className="min-h-screen" style={{ backgroundColor: '#f5faf5' }}>
+      {/* Header */}
+      <Box sx={{ 
+        bgcolor: 'white', 
+        borderBottom: 1, 
+        borderColor: 'divider',
+        boxShadow: 1
+      }}>
+        <Box sx={{ maxWidth: '7xl', mx: 'auto', px: { xs: 2, sm: 3, lg: 4 }, py: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <ShieldIcon sx={{ color: '#2A7F62', fontSize: 32 }} />
+              <Typography variant="h4" component="h1" fontWeight="bold" color="#2A7F62">
+                Vaccination Management
+              </Typography>
+            </Box>
+            <Button 
+              variant="contained" 
+              startIcon={<PlusIcon />}
+              onClick={handleAddVaccination}
+              sx={{
+                bgcolor: '#2A7F62',
+                '&:hover': { bgcolor: '#1e6b50' },
+                color: 'white'
+              }}
             >
-              <Tab label="All" value="all" className="text-[#2D3748]" />
-              <Tab label="COVID-19" value="covid" className="text-[#2D3748]" />
-              <Tab label="Childhood" value="childhood" className="text-[#2D3748]" />
-              <Tab label="Travel" value="travel" className="text-[#2D3748]" />
-            </Tabs>
-            
-            <Card className="bg-[#F5F9F8] shadow-none mt-2">
-              <CardContent>
-                {filteredVaccines.length === 0 ? (
-                  <Typography className="text-[#2D3748]">No vaccines found</Typography>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredVaccines.map((vaccine) => (
-                      <div key={vaccine.id} className="border-b border-[#E2E8F0] pb-4 last:border-0">
-                        <div className="flex justify-between items-center">
-                          <Typography variant="h6" className="text-[#2D3748]">
-                            {vaccine.name}
-                          </Typography>
-                          <Typography variant="body2" className="text-[#2D3748]">
-                            {vaccine.date.toLocaleDateString()}
-                          </Typography>
-                        </div>
-                        <Typography variant="body2" className="text-[#2D3748]">
-                          Provider: {vaccine.provider}
-                        </Typography>
-                        {vaccine.nextDose && (
-                          <Chip 
-                            label={`Next dose: ${vaccine.nextDose.toLocaleDateString()}`}
-                            className="mt-2 bg-[#388E3C] text-white"
-                            size="small"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
+              Add Vaccination
+            </Button>
+          </Box>
+        </Box>
+      </Box>
 
-          {/* AI Suggestions Section */}
-          <section>
-            <Typography variant="h5" className="text-[#2D3748] mb-4">
-              AI-Powered Suggestions
-            </Typography>
-            <Card className="bg-[#F5F9F8] shadow-none">
+      <Box sx={{ maxWidth: '7xl', mx: 'auto', px: { xs: 2, sm: 3, lg: 4 }, py: 4 }}>
+        <Box sx={{ display: 'grid', gap: 4, gridTemplateColumns: { lg: '3fr 1fr' } }}>
+          {/* Main Content */}
+          <Box>
+            {/* Patient Selector & Filters */}
+            <Card sx={{ mb: 3, boxShadow: 2 }}>
               <CardContent>
-                <Typography variant="body1" className="text-[#2D3748] mb-4">
-                  Based on your age (28), we recommend:
-                </Typography>
-                <ul className="list-disc pl-5 space-y-2 text-[#2D3748]">
-                  <li>
-                    <strong>HPV</strong> (if not administered)
-                  </li>
-                  <li>Annual flu shot</li>
-                  <li>Travel advisory</li>
-                  <li>
-                    <strong>Yellow Fever</strong> vaccine needed for Brazil
-                  </li>
-                </ul>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2">Patient:</Typography>
+                    <Select
+                      value={selectedPatient}
+                      onChange={handlePatientChange}
+                      size="small"
+                      sx={{ minWidth: 180 }}
+                    >
+                      <MenuItem value="john-doe">John Doe (#12345)</MenuItem>
+                      <MenuItem value="jane-roe">Jane Roe (#67890)</MenuItem>
+                    </Select>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <FilterIcon fontSize="small" color="action" />
+                    <Select
+                      value={filterType}
+                      onChange={handleFilterTypeChange}
+                      size="small"
+                      sx={{ minWidth: 120 }}
+                    >
+                      <MenuItem value="all">All Types</MenuItem>
+                      <MenuItem value="covid">COVID-19</MenuItem>
+                      <MenuItem value="flu">Influenza</MenuItem>
+                      <MenuItem value="routine">Routine</MenuItem>
+                    </Select>
+                  </Box>
+
+                  <Select
+                    value={filterStatus}
+                    onChange={handleFilterStatusChange}
+                    size="small"
+                    sx={{ minWidth: 120 }}
+                  >
+                    <MenuItem value="all">All Status</MenuItem>
+                    <MenuItem value="completed">Completed</MenuItem>
+                    <MenuItem value="due">Due</MenuItem>
+                    <MenuItem value="overdue">Overdue</MenuItem>
+                    <MenuItem value="scheduled">Scheduled</MenuItem>
+                  </Select>
+
+                  <TextField
+                    placeholder="Search vaccines..."
+                    variant="outlined"
+                    size="small"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ flex: 1, maxWidth: 500 }}
+                  />
+                </Box>
               </CardContent>
             </Card>
-          </section>
-        </main>
-      </div>
-    </LocalizationProvider>
+
+            {/* Patient Summary */}
+            <Card sx={{ mb: 3, boxShadow: 2 }}>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Avatar 
+                        sx={{ 
+                          width: 48, 
+                          height: 48, 
+                          bgcolor: '#2A7F62',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '1rem'
+                        }}
+                      >
+                        {currentPatient.name.split(' ').map(n => n[0]).join('')}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="h6" fontWeight="medium">
+                          {currentPatient.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {currentPatient.id} • Age: {currentPatient.age}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box textAlign="right">
+                      <Typography variant="body2" color="text.secondary">
+                        Vaccination Compliance
+                      </Typography>
+                      <Typography variant="h6" color="#2A7F62" fontWeight="medium">
+                        {stats.compliance}%
+                      </Typography>
+                    </Box>
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <Typography variant="body2">
+                    <Box component="span" color="text.secondary">Last vaccination:</Box>
+                    <Box component="span" ml={1} fontWeight="medium">{currentPatient.lastVaccination}</Box>
+                  </Typography>
+                  <Typography variant="body2">
+                    <Box component="span" color="text.secondary">Next due:</Box>
+                    <Box component="span" ml={1} fontWeight="medium" color="#ff9800">
+                      {currentPatient.upcomingDue}
+                    </Box>
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Vaccinations Table */}
+            <Card sx={{ boxShadow: 2 }}>
+              <CardHeader 
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <ShieldIcon sx={{ color: '#2A7F62' }} />
+                    <Typography variant="h6">Vaccination Records</Typography>
+                    <Box sx={{ flex: 1 }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {filteredVaccinations.length} records found
+                    </Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ p: 0 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: '#e8f5e9' }}>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Vaccine</TableCell>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Date Given</TableCell>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Next Due</TableCell>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 'medium' }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredVaccinations.map((vaccination) => {
+                      const statusColor = getStatusColor(vaccination.status);
+                      return (
+                        <TableRow 
+                          key={vaccination.id} 
+                          hover
+                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                        >
+                          <TableCell>
+                            <Box>
+                              <Typography fontWeight="medium">{vaccination.vaccine}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {vaccination.manufacturer} • Lot: {vaccination.lotNumber}
+                              </Typography>
+                              {vaccination.reactions !== "None reported" && vaccination.reactions !== "N/A" && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                  <AlertTriangleIcon fontSize="small" color="error" />
+                                  <Typography variant="caption" color="error">
+                                    {vaccination.reactions}
+                                  </Typography>
+                                </Box>
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <CalendarDaysIcon fontSize="small" sx={{ color: '#2A7F62' }} />
+                              <Box>
+                                <Typography fontWeight="medium">
+                                  {vaccination.dateGiven !== "N/A" ? vaccination.dateGiven : "Not given"}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {vaccination.location}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <ClockIcon fontSize="small" sx={{ color: '#2A7F62' }} />
+                              <Typography fontWeight="medium">
+                                {vaccination.nextDue}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center',
+                              px: 1.5,
+                              py: 0.5,
+                              borderRadius: 1,
+                              bgcolor: statusColor.bg,
+                              color: statusColor.text,
+                              border: `1px solid ${statusColor.border}`
+                            }}>
+                              {vaccination.status === "completed" && <CheckCircleIcon fontSize="small" sx={{ mr: 0.5 }} />}
+                              {vaccination.status === "due" && <ClockIcon fontSize="small" sx={{ mr: 0.5 }} />}
+                              {vaccination.status.charAt(0).toUpperCase() + vaccination.status.slice(1)}
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              <IconButton
+                                onClick={() => handleEditVaccination(vaccination)}
+                                size="small"
+                                sx={{ color: '#2196f3' }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                onClick={() => handleDeleteVaccination(vaccination.id)}
+                                size="small"
+                                sx={{ color: '#f44336' }}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                              {vaccination.certificate && (
+                                <IconButton
+                                  onClick={() => window.print()}
+                                  size="small"
+                                  sx={{ color: '#2A7F62' }}
+                                >
+                                  <PrinterIcon fontSize="small" />
+                                </IconButton>
+                              )}
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Vaccination History */}
+            <Card sx={{ mt: 3, boxShadow: 2 }}>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <CheckCircleIcon sx={{ color: '#2A7F62' }} />
+                    <Typography variant="h6">Lifetime Protection History</Typography>
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {vaccinationHistory.map((item) => (
+                    <Box 
+                      key={item.id}
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between', 
+                        p: 2, 
+                        bgcolor: '#e8f5e9', 
+                        borderRadius: 1,
+                        border: '1px solid #c8e6c9'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ 
+                          width: 32, 
+                          height: 32, 
+                          bgcolor: '#2A7F62', 
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <CheckCircleIcon sx={{ color: 'white', fontSize: 16 }} />
+                        </Box>
+                        <Box>
+                          <Typography fontWeight="medium">{item.vaccine}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {item.series} • Last: {item.lastDate}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Chip 
+                        label="Protected" 
+                        sx={{ 
+                          bgcolor: '#c8e6c9', 
+                          color: '#2e7d32',
+                          border: '1px solid #a5d6a7'
+                        }}
+                        size="small"
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+
+          {/* Sidebar */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Vaccination Stats */}
+            <Card sx={{ boxShadow: 2 }}>
+              <CardHeader 
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <TrendingUpIcon sx={{ color: '#2A7F62' }} />
+                    <Typography variant="h6">Vaccination Summary</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box textAlign="center">
+                  <Typography variant="h3" color="#2A7F62" fontWeight="bold">
+                    {stats.total}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mt={1}>
+                    Completed Vaccines
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: '#fff8e1', 
+                    borderRadius: 1,
+                    border: '1px solid #ffecb3',
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="h5" color="#ff9800" fontWeight="bold">
+                      {stats.due}
+                    </Typography>
+                    <Typography variant="caption" color="#ff9800">
+                      Due Soon
+                    </Typography>
+                  </Box>
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: '#e8f5e9', 
+                    borderRadius: 1,
+                    border: '1px solid #c8e6c9',
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="h5" color="#2A7F62" fontWeight="bold">
+                      {stats.protected}
+                    </Typography>
+                    <Typography variant="caption" color="#2A7F62">
+                      Protected
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Upcoming Vaccinations */}
+            <Card sx={{ boxShadow: 2 }}>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <ClockIcon sx={{ color: '#2A7F62' }} />
+                    <Typography variant="h6" color="#2A7F62">
+                      Upcoming Due
+                    </Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {upcomingVaccinations.map((item) => {
+                  const priorityColor = getPriorityColor(item.priority);
+                  return (
+                    <Box 
+                      key={item.id}
+                      sx={{ 
+                        p: 2, 
+                        bgcolor: priorityColor.bg, 
+                        borderRadius: 1,
+                        border: `1px solid ${priorityColor.border}`
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography fontWeight="medium" color={priorityColor.text}>
+                          {item.vaccine}
+                        </Typography>
+                        <Box sx={{ 
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                          bgcolor: priorityColor.bg,
+                          color: priorityColor.text,
+                          border: `1px solid ${priorityColor.border}`,
+                          fontSize: '0.75rem'
+                        }}>
+                          {item.priority.toUpperCase()}
+                        </Box>
+                      </Box>
+                      <Typography variant="body2" color={priorityColor.text}>
+                        Due: {item.dueDate}
+                      </Typography>
+                      <Typography variant="caption" color={priorityColor.text} mt={0.5}>
+                        {item.reason}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card sx={{ boxShadow: 2 }}>
+              <CardHeader title="Quick Actions" />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Button 
+                  variant="outlined" 
+                  fullWidth 
+                  onClick={() => window.print()}
+                  startIcon={<PrinterIcon />}
+                  sx={{ color: '#2A7F62', borderColor: '#2A7F62' }}
+                >
+                  Print Vaccination Card
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  fullWidth 
+                  onClick={() => alert("Generating QR code...")}
+                  startIcon={<QrCodeIcon />}
+                  sx={{ color: '#2A7F62', borderColor: '#2A7F62' }}
+                >
+                  Digital Certificate
+                </Button>
+                <Button 
+                  variant="contained" 
+                  fullWidth 
+                  onClick={handleAddVaccination}
+                  startIcon={<PlusIcon />}
+                  sx={{ bgcolor: '#2A7F62', '&:hover': { bgcolor: '#1e6b50' } }}
+                >
+                  Schedule New Vaccine
+                </Button>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Add/Edit Vaccination Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>{isEditing ? "Edit Vaccination" : "Add New Vaccination"}</DialogTitle>
+        <DialogContent>
+          {currentVaccination && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+              <TextField
+                label="Vaccine Name"
+                value={currentVaccination.vaccine}
+                onChange={(e) => setCurrentVaccination({...currentVaccination, vaccine: e.target.value})}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Manufacturer"
+                value={currentVaccination.manufacturer}
+                onChange={(e) => setCurrentVaccination({...currentVaccination, manufacturer: e.target.value})}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Lot Number"
+                value={currentVaccination.lotNumber}
+                onChange={(e) => setCurrentVaccination({...currentVaccination, lotNumber: e.target.value})}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Date Given"
+                type="date"
+                value={currentVaccination.dateGiven}
+                onChange={(e) => setCurrentVaccination({...currentVaccination, dateGiven: e.target.value})}
+                fullWidth
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Next Due Date"
+                type="date"
+                value={currentVaccination.nextDue}
+                onChange={(e) => setCurrentVaccination({...currentVaccination, nextDue: e.target.value})}
+                fullWidth
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Administered By"
+                value={currentVaccination.administeredBy}
+                onChange={(e) => setCurrentVaccination({...currentVaccination, administeredBy: e.target.value})}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Location"
+                value={currentVaccination.location}
+                onChange={(e) => setCurrentVaccination({...currentVaccination, location: e.target.value})}
+                fullWidth
+                margin="normal"
+              />
+              <Select
+                value={currentVaccination.status}
+                onChange={(e) => setCurrentVaccination({...currentVaccination, status: e.target.value as any})}
+                fullWidth
+                margin="dense"
+              >
+                <MenuItem value="completed">Completed</MenuItem>
+                <MenuItem value="due">Due</MenuItem>
+                <MenuItem value="overdue">Overdue</MenuItem>
+                <MenuItem value="scheduled">Scheduled</MenuItem>
+              </Select>
+              <TextField
+                label="Reactions"
+                value={currentVaccination.reactions}
+                onChange={(e) => setCurrentVaccination({...currentVaccination, reactions: e.target.value})}
+                fullWidth
+                margin="normal"
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setOpenDialog(false)}
+            startIcon={<CancelIcon />}
+            sx={{ color: '#f44336' }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveVaccination}
+            startIcon={<SaveIcon />}
+            sx={{ color: '#2A7F62' }}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </div>
   );
-}
+};
+
+export default Vaccinations;

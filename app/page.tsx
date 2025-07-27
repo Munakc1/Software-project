@@ -4,7 +4,7 @@ import PatientTestimonials from './ui/components/PatientTestimonials';
 
 import MobileAppPromotion from './ui/components/MobileAppPromotion';
 
-import { FAQSection } from './ui/components/FAQSection';
+
 
 
 export default function Home() {
@@ -13,7 +13,7 @@ export default function Home() {
       <HeroSection />
       <PatientTestimonials />
       <MobileAppPromotion />
-      <FAQSection />
+    
 
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
