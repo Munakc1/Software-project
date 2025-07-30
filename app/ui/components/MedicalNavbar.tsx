@@ -44,6 +44,7 @@ const navigationItems: NavItem[] = [
   { name: "Appointments", path: "/appointments" },
   { name: "Prescriptions", path: "/prescriptions" },
   { name: "Vaccination", path: "/vaccination" },
+  { name: "Ambulance", path: "/ambulance" },
 ];
 
 interface Notification {
