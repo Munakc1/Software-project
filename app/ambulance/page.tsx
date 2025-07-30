@@ -109,7 +109,7 @@ const EmergencyCall = () => {
       }}
       disabled={isCalling}
     >
-      {isCalling ? 'Connecting to Emergency...' : 'Emergency Call (911)'}
+      {isCalling ? 'Connecting to Emergency...' : 'Emergency Call (102)'}
     </Button>
   );
 };
