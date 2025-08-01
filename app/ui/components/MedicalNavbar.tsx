@@ -73,33 +73,38 @@ const notifications: Notification[] = [
   }
 ];
 
+
 export function MedicalNavbar() {
   const pathname = usePathname();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
   const [registerAnchorEl, setRegisterAnchorEl] = useState<null | HTMLElement>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Initialize theme and notifications
+  // Initialize theme and notifications after mount (client only)
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedTheme = typeof window !== 'undefined' ? (localStorage.getItem('theme') as 'light' | 'dark' | null) : null;
+    const prefersDark = typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
     setTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
-    
-    const unread = notifications.filter(n => !n.read).length;
-    setUnreadCount(unread);
+    setUnreadCount(notifications.filter(n => !n.read).length);
+    setMounted(true);
   }, []);
+
 
   // Apply theme changes
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('theme', theme);
+    if (theme) {
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      localStorage.setItem('theme', theme);
+    }
   }, [theme]);
 
+
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    if (theme) setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   const isActive = (path: string) => pathname === path;
@@ -136,25 +141,25 @@ export function MedicalNavbar() {
   // MUI theme with custom medical colors
   const muiTheme = createTheme({
     palette: {
-      mode: theme,
+      mode: theme || 'light',
       primary: {
-        main: theme === "dark" ? "#2E7D32" : "#2A7F62",
+        main: theme === 'dark' ? '#2E7D32' : '#2A7F62',
       },
       secondary: {
-        main: theme === "dark" ? "#1E3A4D" : "#3A5E6D",
+        main: theme === 'dark' ? '#1E3A4D' : '#3A5E6D',
       },
       error: {
-        main: theme === "dark" ? "#FF5252" : "#D32F2F",
+        main: theme === 'dark' ? '#FF5252' : '#D32F2F',
       },
       success: {
-        main: theme === "dark" ? "#4CAF50" : "#388E3C",
+        main: theme === 'dark' ? '#4CAF50' : '#388E3C',
       },
       background: {
-        default: theme === "dark" ? "#121212" : "#FFFFFF",
-        paper: theme === "dark" ? "#1E1E1E" : "#F5F9F8",
+        default: theme === 'dark' ? '#121212' : '#FFFFFF',
+        paper: theme === 'dark' ? '#1E1E1E' : '#F5F9F8',
       },
       text: {
-        primary: theme === "dark" ? "#E0E0E0" : "#2D3748",
+        primary: theme === 'dark' ? '#E0E0E0' : '#2D3748',
       },
     },
     components: {
@@ -164,7 +169,7 @@ export function MedicalNavbar() {
             textTransform: 'none',
             fontWeight: 500,
             fontSize: '0.9rem',
-            padding: '8px 16px'
+            padding: '8px 16px',
           },
         },
       },
@@ -257,6 +262,11 @@ export function MedicalNavbar() {
       </Box>
     </Box>
   );
+
+  if (!mounted || theme === null || unreadCount === null) {
+    // Prevent hydration mismatch by not rendering until client values are set
+    return null;
+  }
 
   return (
     <MuiThemeProvider theme={muiTheme}>
